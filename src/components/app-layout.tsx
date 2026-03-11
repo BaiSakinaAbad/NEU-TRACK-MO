@@ -1,18 +1,44 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from './auth-context';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { LayoutDashboard, FileText, Users, History, LogOut, Search, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  const [searchValue, setSearchValue] = useState(searchParams.get('search') || '');
+
+  useEffect(() => {
+    setSearchValue(searchParams.get('search') || '');
+  }, [searchParams]);
 
   if (!user) return <>{children}</>;
+
+  const handleSearch = (term: string) => {
+    setSearchValue(term);
+    const params = new URLSearchParams(searchParams.toString());
+    if (term) {
+      params.set('search', term);
+    } else {
+      params.delete('search');
+    }
+    
+    // Only update URL if we are on a page that supports search (like /moas)
+    if (pathname.startsWith('/moas') || pathname.startsWith('/dashboard')) {
+      router.replace(`${pathname}?${params.toString()}`);
+    } else {
+      // Redirect to MOA list if searching from elsewhere
+      router.push(`/moas?${params.toString()}`);
+    }
+  };
 
   const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', roles: ['ADMIN', 'FACULTY'] },
@@ -79,7 +105,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <input 
                 type="text" 
                 placeholder="Search MOAs by college, industry, or company..." 
-                className="bg-transparent border-none focus:ring-0 w-full max-w-md"
+                className="bg-transparent border-none focus:ring-0 w-full max-w-md outline-none"
+                value={searchValue}
+                onChange={(e) => handleSearch(e.target.value)}
               />
             </div>
           </header>

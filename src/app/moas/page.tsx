@@ -4,19 +4,20 @@ import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/components/auth-context';
 import { MOCK_MOAS } from '@/lib/mock-data';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
-import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Search, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore } from 'lucide-react';
+import { Plus, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
+import { useSearchParams } from 'next/navigation';
 
 export default function MOAListPage() {
   const { user } = useAuth();
-  const [searchTerm, setSearchTerm] = useState('');
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'ALL' | 'ACTIVE' | 'PROCESSING' | 'DELETED'>('ALL');
 
   const isStudent = user?.role === 'STUDENT';
+  const searchTerm = searchParams.get('search') || '';
 
   const filteredMOAs = useMemo(() => {
     let list = MOCK_MOAS;
@@ -39,7 +40,7 @@ export default function MOAListPage() {
       }
     }
 
-    // Search term filtering
+    // Search term filtering from URL
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       list = list.filter(m => 
@@ -76,57 +77,46 @@ export default function MOAListPage() {
       </div>
 
       <Card className="border-none shadow-sm">
-        <CardHeader className="p-4 pb-0">
-          <div className={`flex flex-col md:flex-row md:items-center gap-4 ${isStudent ? 'justify-end' : 'justify-between'}`}>
-            {!isStudent && (
-              <div className="flex items-center gap-2 border rounded-lg p-1 bg-muted/20">
+        {!isStudent && (
+          <div className="p-4 pb-0 flex justify-between items-center">
+            <div className="flex items-center gap-2 border rounded-lg p-1 bg-muted/20">
+              <Button 
+                variant={activeTab === 'ALL' ? 'secondary' : 'ghost'} 
+                size="sm" 
+                onClick={() => setActiveTab('ALL')}
+                className="text-xs h-8"
+              >
+                All
+              </Button>
+              <Button 
+                variant={activeTab === 'ACTIVE' ? 'secondary' : 'ghost'} 
+                size="sm" 
+                onClick={() => setActiveTab('ACTIVE')}
+                className="text-xs h-8"
+              >
+                Active
+              </Button>
+              <Button 
+                variant={activeTab === 'PROCESSING' ? 'secondary' : 'ghost'} 
+                size="sm" 
+                onClick={() => setActiveTab('PROCESSING')}
+                className="text-xs h-8"
+              >
+                Processing
+              </Button>
+              {user?.role === 'ADMIN' && (
                 <Button 
-                  variant={activeTab === 'ALL' ? 'secondary' : 'ghost'} 
+                  variant={activeTab === 'DELETED' ? 'secondary' : 'ghost'} 
                   size="sm" 
-                  onClick={() => setActiveTab('ALL')}
+                  onClick={() => setActiveTab('DELETED')}
                   className="text-xs h-8"
                 >
-                  All
+                  Recycle Bin
                 </Button>
-                <Button 
-                  variant={activeTab === 'ACTIVE' ? 'secondary' : 'ghost'} 
-                  size="sm" 
-                  onClick={() => setActiveTab('ACTIVE')}
-                  className="text-xs h-8"
-                >
-                  Active
-                </Button>
-                <Button 
-                  variant={activeTab === 'PROCESSING' ? 'secondary' : 'ghost'} 
-                  size="sm" 
-                  onClick={() => setActiveTab('PROCESSING')}
-                  className="text-xs h-8"
-                >
-                  Processing
-                </Button>
-                {user?.role === 'ADMIN' && (
-                  <Button 
-                    variant={activeTab === 'DELETED' ? 'secondary' : 'ghost'} 
-                    size="sm" 
-                    onClick={() => setActiveTab('DELETED')}
-                    className="text-xs h-8"
-                  >
-                    Recycle Bin
-                  </Button>
-                )}
-              </div>
-            )}
-            <div className="relative w-full md:w-80">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search partnerships..." 
-                className="pl-9 h-10 border-muted-foreground/20"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+              )}
             </div>
           </div>
-        </CardHeader>
+        )}
         <CardContent className="p-0 pt-4">
           <div className="overflow-x-auto">
             <Table>
