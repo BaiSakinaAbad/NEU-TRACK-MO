@@ -1,0 +1,87 @@
+import { User, MOA, AuditLog } from './types';
+
+export const MOCK_USERS: User[] = [
+  { id: '1', email: 'admin@neu.edu.ph', name: 'System Admin', role: 'ADMIN', isBlocked: false },
+  { id: '2', email: 'faculty@neu.edu.ph', name: 'Dr. Faculty Member', role: 'FACULTY', isBlocked: false, college: 'CAS' },
+  { id: '3', email: 'student@neu.edu.ph', name: 'Juan Dela Cruz', role: 'STUDENT', isBlocked: false, college: 'CAS' },
+];
+
+export const MOCK_MOAS: MOA[] = [
+  {
+    id: 'moa-1',
+    hteId: 'HTE-2024-001',
+    companyName: 'Tech Innovators Inc.',
+    companyAddress: '123 Cyber St, Quezon City',
+    contactPerson: 'Alice Smith',
+    contactEmail: 'alice@techinnovators.com',
+    industryType: 'Technology',
+    effectiveDate: '2024-01-01',
+    expiryDate: '2025-01-01',
+    status: 'APPROVED_SIGNED',
+    endorsedByCollege: 'CCS',
+    isDeleted: false,
+    createdAt: '2024-01-01T10:00:00Z',
+    updatedAt: '2024-01-01T10:00:00Z',
+  },
+  {
+    id: 'moa-2',
+    hteId: 'HTE-2024-002',
+    companyName: 'Global Finance Solutions',
+    companyAddress: '456 Wealth Ave, Makati City',
+    contactPerson: 'Bob Johnson',
+    contactEmail: 'bob@globalfinance.com',
+    industryType: 'Finance',
+    effectiveDate: '2024-02-15',
+    expiryDate: '2024-04-15',
+    status: 'EXPIRING',
+    endorsedByCollege: 'CBA',
+    isDeleted: false,
+    createdAt: '2024-02-15T11:30:00Z',
+    updatedAt: '2024-02-15T11:30:00Z',
+  },
+  {
+    id: 'moa-3',
+    hteId: 'HTE-2023-099',
+    companyName: 'Foodies Delight Co.',
+    companyAddress: '789 Yummy Blvd, Pasig City',
+    contactPerson: 'Charlie Brown',
+    contactEmail: 'charlie@foodiesdelight.com',
+    industryType: 'Food',
+    effectiveDate: '2023-01-01',
+    expiryDate: '2023-12-31',
+    status: 'EXPIRED',
+    endorsedByCollege: 'CHM',
+    isDeleted: false,
+    createdAt: '2023-01-01T09:00:00Z',
+    updatedAt: '2023-12-31T23:59:59Z',
+  },
+  {
+    id: 'moa-4',
+    hteId: 'HTE-2024-005',
+    companyName: 'Legal Eagles LLP',
+    companyAddress: '101 Justice Dr, Manila',
+    contactPerson: 'Diana Prince',
+    contactEmail: 'diana@legaleagles.com',
+    industryType: 'Services',
+    effectiveDate: '2024-03-01',
+    expiryDate: '2025-03-01',
+    status: 'PROCESSING_LEGAL',
+    endorsedByCollege: 'LAW',
+    isDeleted: false,
+    createdAt: '2024-03-01T08:00:00Z',
+    updatedAt: '2024-03-01T08:00:00Z',
+  },
+];
+
+export const MOCK_AUDIT_LOGS: AuditLog[] = [
+  {
+    id: 'log-1',
+    userId: '1',
+    userName: 'System Admin',
+    operation: 'CREATE',
+    moaId: 'moa-1',
+    moaName: 'Tech Innovators Inc.',
+    details: 'Initial MOA entry created',
+    timestamp: '2024-01-01T10:00:00Z',
+  }
+];
