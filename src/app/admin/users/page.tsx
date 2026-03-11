@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -108,17 +109,21 @@ export default function UserManagementPage() {
                         <DropdownMenuItem className="cursor-pointer rounded-lg py-2">
                           <UserCog className="mr-2 h-4 w-4" /> Manage Role
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator className="my-1 opacity-50" />
-                        <DropdownMenuItem 
-                          className={`cursor-pointer rounded-lg py-2 ${user.isBlocked ? 'text-green-600' : 'text-destructive'}`}
-                          onClick={() => toggleBlock(user.id)}
-                        >
-                          {user.isBlocked ? (
-                            <><CheckCircle2 className="mr-2 h-4 w-4" /> Unblock User</>
-                          ) : (
-                            <><Ban className="mr-2 h-4 w-4" /> Block User</>
-                          )}
-                        </DropdownMenuItem>
+                        {user.role !== 'ADMIN' && (
+                          <>
+                            <DropdownMenuSeparator className="my-1 opacity-50" />
+                            <DropdownMenuItem 
+                              className={`cursor-pointer rounded-lg py-2 ${user.isBlocked ? 'text-green-600' : 'text-destructive'}`}
+                              onClick={() => toggleBlock(user.id)}
+                            >
+                              {user.isBlocked ? (
+                                <><CheckCircle2 className="mr-2 h-4 w-4" /> Unblock User</>
+                              ) : (
+                                <><Ban className="mr-2 h-4 w-4" /> Block User</>
+                              )}
+                            </DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

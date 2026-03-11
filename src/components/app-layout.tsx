@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -71,7 +72,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     isActive={pathname === item.href}
                     className={`h-12 px-4 rounded-xl transition-all duration-200 ${
                       pathname === item.href 
-                      ? 'bg-accent/80 text-primary shadow-sm font-semibold' 
+                      ? 'bg-accent text-primary shadow-sm font-semibold' 
                       : 'hover:bg-accent/40 text-muted-foreground hover:text-foreground'
                     }`}
                   >
