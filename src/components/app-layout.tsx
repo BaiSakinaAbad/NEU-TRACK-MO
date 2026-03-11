@@ -7,6 +7,7 @@ import { LayoutDashboard, FileText, Users, History, LogOut, Search, ShieldCheck 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
@@ -31,11 +32,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       params.delete('search');
     }
     
-    // Only update URL if we are on a page that supports search (like /moas)
     if (pathname.startsWith('/moas') || pathname.startsWith('/dashboard')) {
       router.replace(`${pathname}?${params.toString()}`);
     } else {
-      // Redirect to MOA list if searching from elsewhere
       router.push(`/moas?${params.toString()}`);
     }
   };
@@ -51,67 +50,79 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background font-body">
-        <Sidebar className="border-r border-border">
-          <SidebarHeader className="p-4 flex flex-row items-center gap-2 border-b">
-            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-              <ShieldCheck className="text-white" />
+      <div className="flex min-h-screen w-full bg-[#fcfdfe] font-body">
+        <Sidebar className="border-r border-border/60">
+          <SidebarHeader className="p-6 flex flex-row items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+              <ShieldCheck className="text-white w-6 h-6" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-lg text-primary tracking-tight">MOA Track</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Monitoring System</span>
+              <span className="font-bold text-lg text-primary leading-tight">MOA Track</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold">Monitoring System</span>
             </div>
           </SidebarHeader>
-          <SidebarContent className="p-2">
-            <SidebarMenu>
+          
+          <SidebarContent className="px-3 pt-4">
+            <SidebarMenu className="gap-2">
               {filteredMenu.map((item) => (
                 <SidebarMenuItem key={item.name}>
-                  <SidebarMenuButton asChild isActive={pathname === item.href}>
-                    <Link href={item.href} className="flex items-center gap-3 px-4 py-3">
-                      <item.icon className="h-5 w-5" />
-                      <span className="font-medium">{item.name}</span>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={pathname === item.href}
+                    className={`h-12 px-4 rounded-xl transition-all duration-200 ${
+                      pathname === item.href 
+                      ? 'bg-accent/80 text-primary shadow-sm font-semibold' 
+                      : 'hover:bg-accent/40 text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Link href={item.href} className="flex items-center gap-4">
+                      <item.icon className={`h-5 w-5 ${pathname === item.href ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <span>{item.name}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter className="p-4 border-t mt-auto">
-            <div className="flex items-center gap-3 mb-4 px-2">
-              <Avatar className="h-10 w-10 border-2 border-primary/10">
+
+          <SidebarFooter className="p-6 mt-auto">
+            <Separator className="mb-6 opacity-50" />
+            <div className="flex items-center gap-3 mb-6">
+              <Avatar className="h-10 w-10 ring-2 ring-primary/5 shadow-sm">
                 <AvatarFallback className="bg-primary/5 text-primary font-bold">
                   {user.name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col overflow-hidden">
-                <span className="text-sm font-semibold truncate">{user.name}</span>
-                <span className="text-xs text-muted-foreground capitalize">{user.role.toLowerCase()}</span>
+                <span className="text-sm font-bold text-foreground truncate">{user.name}</span>
+                <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{user.role}</span>
               </div>
             </div>
             <button 
               onClick={logout}
-              className="flex items-center gap-3 w-full px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-bold text-destructive hover:bg-destructive/5 rounded-xl transition-all"
             >
               <LogOut className="h-4 w-4" />
               Sign Out
             </button>
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset>
-          <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-white/80 backdrop-blur-md px-6">
+        
+        <SidebarInset className="bg-[#fcfdfe]">
+          <header className="sticky top-0 z-10 flex h-20 items-center gap-4 border-b border-border/40 bg-white/80 backdrop-blur-xl px-8 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
             <SidebarTrigger className="md:hidden" />
-            <div className="flex-1 flex items-center gap-2 text-sm text-muted-foreground">
-              <Search className="h-4 w-4" />
+            <div className="flex-1 flex items-center gap-3 text-sm text-muted-foreground">
+              <Search className="h-4 w-4 text-muted-foreground/60" />
               <input 
                 type="text" 
                 placeholder="Search MOAs by college, industry, or company..." 
-                className="bg-transparent border-none focus:ring-0 w-full max-w-md outline-none"
+                className="bg-transparent border-none focus:ring-0 w-full max-w-xl outline-none placeholder:text-muted-foreground/50"
                 value={searchValue}
                 onChange={(e) => handleSearch(e.target.value)}
               />
             </div>
           </header>
-          <main className="p-6">
+          <main className="p-8">
             {children}
           </main>
         </SidebarInset>

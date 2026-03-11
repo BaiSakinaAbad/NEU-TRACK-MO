@@ -22,11 +22,9 @@ export default function MOAListPage() {
   const filteredMOAs = useMemo(() => {
     let list = MOCK_MOAS;
 
-    // Role-based status filtering for students: Only see approved
     if (isStudent) {
       list = list.filter(m => m.status.startsWith('APPROVED') && !m.isDeleted);
     } else {
-      // Admin/Faculty filtering
       if (user?.role !== 'ADMIN') {
         list = list.filter(m => !m.isDeleted);
       } else if (activeTab === 'DELETED') {
@@ -40,7 +38,6 @@ export default function MOAListPage() {
       }
     }
 
-    // Search term filtering from URL
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       list = list.filter(m => 
@@ -55,44 +52,44 @@ export default function MOAListPage() {
   }, [user, searchTerm, activeTab, isStudent]);
 
   const getStatusBadge = (status: string) => {
-    if (status.startsWith('APPROVED')) return <Badge className="bg-green-100 text-green-800 border-none hover:bg-green-100">Approved</Badge>;
-    if (status.startsWith('PROCESSING')) return <Badge className="bg-blue-100 text-blue-800 border-none hover:bg-blue-100">Processing</Badge>;
-    if (status === 'EXPIRED') return <Badge variant="destructive" className="border-none">Expired</Badge>;
-    if (status === 'EXPIRING') return <Badge className="bg-orange-100 text-orange-800 border-none hover:bg-orange-100">Expiring</Badge>;
-    return <Badge variant="outline">{status}</Badge>;
+    if (status.startsWith('APPROVED')) return <Badge className="bg-green-100 text-green-800 border-none hover:bg-green-100 font-bold px-3 py-1 rounded-lg">Approved</Badge>;
+    if (status.startsWith('PROCESSING')) return <Badge className="bg-blue-100 text-blue-800 border-none hover:bg-blue-100 font-bold px-3 py-1 rounded-lg">Processing</Badge>;
+    if (status === 'EXPIRED') return <Badge variant="destructive" className="border-none font-bold px-3 py-1 rounded-lg">Expired</Badge>;
+    if (status === 'EXPIRING') return <Badge className="bg-orange-100 text-orange-800 border-none hover:bg-orange-100 font-bold px-3 py-1 rounded-lg">Expiring</Badge>;
+    return <Badge variant="outline" className="font-bold px-3 py-1 rounded-lg">{status}</Badge>;
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-primary">Memorandum of Agreements</h1>
-          <p className="text-muted-foreground">Manage and track all university partnerships.</p>
+          <h1 className="text-4xl font-extrabold tracking-tight text-primary">Memorandum of Agreements</h1>
+          <p className="text-muted-foreground mt-2 text-lg">Manage and track all university partnerships.</p>
         </div>
         {user?.role === 'ADMIN' && (
-          <Button className="bg-primary hover:bg-primary/90">
-            <Plus className="mr-2 h-4 w-4" /> Add New MOA
+          <Button className="bg-primary hover:bg-primary/90 h-12 px-6 rounded-xl shadow-lg shadow-primary/20 transition-all font-bold">
+            <Plus className="mr-2 h-5 w-5" /> Add New MOA
           </Button>
         )}
       </div>
 
-      <Card className="border-none shadow-sm">
+      <Card className="border-none shadow-xl shadow-black/5 bg-white rounded-2xl overflow-hidden">
         {!isStudent && (
-          <div className="p-4 pb-0 flex justify-between items-center">
-            <div className="flex items-center gap-2 border rounded-lg p-1 bg-muted/20">
+          <div className="p-6 pb-0 flex justify-between items-center border-b border-border/50">
+            <div className="flex items-center gap-2 border rounded-xl p-1 bg-muted/20 mb-6">
               <Button 
                 variant={activeTab === 'ALL' ? 'secondary' : 'ghost'} 
                 size="sm" 
                 onClick={() => setActiveTab('ALL')}
-                className="text-xs h-8"
+                className={`text-xs h-9 px-4 rounded-lg transition-all ${activeTab === 'ALL' ? 'shadow-sm font-bold' : ''}`}
               >
-                All
+                All Agreements
               </Button>
               <Button 
                 variant={activeTab === 'ACTIVE' ? 'secondary' : 'ghost'} 
                 size="sm" 
                 onClick={() => setActiveTab('ACTIVE')}
-                className="text-xs h-8"
+                className={`text-xs h-9 px-4 rounded-lg transition-all ${activeTab === 'ACTIVE' ? 'shadow-sm font-bold' : ''}`}
               >
                 Active
               </Button>
@@ -100,7 +97,7 @@ export default function MOAListPage() {
                 variant={activeTab === 'PROCESSING' ? 'secondary' : 'ghost'} 
                 size="sm" 
                 onClick={() => setActiveTab('PROCESSING')}
-                className="text-xs h-8"
+                className={`text-xs h-9 px-4 rounded-lg transition-all ${activeTab === 'PROCESSING' ? 'shadow-sm font-bold' : ''}`}
               >
                 Processing
               </Button>
@@ -109,7 +106,7 @@ export default function MOAListPage() {
                   variant={activeTab === 'DELETED' ? 'secondary' : 'ghost'} 
                   size="sm" 
                   onClick={() => setActiveTab('DELETED')}
-                  className="text-xs h-8"
+                  className={`text-xs h-9 px-4 rounded-lg transition-all ${activeTab === 'DELETED' ? 'shadow-sm font-bold text-destructive' : ''}`}
                 >
                   Recycle Bin
                 </Button>
@@ -117,69 +114,69 @@ export default function MOAListPage() {
             </div>
           </div>
         )}
-        <CardContent className="p-0 pt-4">
+        <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/30 hover:bg-muted/30">
-                  <TableHead className="font-semibold text-primary">Company</TableHead>
-                  <TableHead className="font-semibold text-primary">Contact Person</TableHead>
-                  <TableHead className="font-semibold text-primary">Industry</TableHead>
-                  <TableHead className="font-semibold text-primary">Status</TableHead>
-                  <TableHead className="font-semibold text-primary">College</TableHead>
-                  {!isStudent && <TableHead className="font-semibold text-primary">Expiry Date</TableHead>}
-                  <TableHead className="text-right"></TableHead>
+                <TableRow className="bg-muted/30 border-b border-border/50 hover:bg-muted/30">
+                  <TableHead className="font-bold text-primary py-5 px-6">Company</TableHead>
+                  <TableHead className="font-bold text-primary py-5">Contact Person</TableHead>
+                  <TableHead className="font-bold text-primary py-5">Industry</TableHead>
+                  <TableHead className="font-bold text-primary py-5">Status</TableHead>
+                  <TableHead className="font-bold text-primary py-5">College</TableHead>
+                  {!isStudent && <TableHead className="font-bold text-primary py-5">Expiry Date</TableHead>}
+                  <TableHead className="text-right px-6"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredMOAs.length > 0 ? (
                   filteredMOAs.map((moa) => (
-                    <TableRow key={moa.id} className="hover:bg-accent/30 transition-colors">
-                      <TableCell className="font-medium">
+                    <TableRow key={moa.id} className="hover:bg-accent/10 transition-colors border-b border-border/30">
+                      <TableCell className="px-6 py-5">
                         <div className="flex flex-col">
-                          <span>{moa.companyName}</span>
-                          <span className="text-xs text-muted-foreground truncate max-w-[200px] font-normal">{moa.companyAddress}</span>
+                          <span className="font-bold text-foreground">{moa.companyName}</span>
+                          <span className="text-xs text-muted-foreground truncate max-w-[200px] font-normal mt-0.5">{moa.companyAddress}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-medium text-muted-foreground">{moa.contactPerson}</span>
-                          <span className="text-xs text-muted-foreground/60">{moa.contactEmail}</span>
+                          <span className="font-bold text-muted-foreground">{moa.contactPerson}</span>
+                          <span className="text-[11px] text-muted-foreground/60 font-medium">{moa.contactEmail}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{moa.industryType}</TableCell>
+                      <TableCell className="text-muted-foreground font-medium">{moa.industryType}</TableCell>
                       <TableCell>{getStatusBadge(moa.status)}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="font-normal text-muted-foreground border-muted-foreground/20">{moa.endorsedByCollege}</Badge>
+                        <Badge variant="outline" className="font-bold text-muted-foreground border-border/60 bg-muted/10 px-3 py-1 rounded-lg">{moa.endorsedByCollege}</Badge>
                       </TableCell>
                       {!isStudent && (
-                        <TableCell className="text-sm text-muted-foreground">
-                          {new Date(moa.expiryDate).toLocaleDateString()}
+                        <TableCell className="text-sm font-medium text-muted-foreground/80">
+                          {new Date(moa.expiryDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                         </TableCell>
                       )}
-                      <TableCell className="text-right">
+                      <TableCell className="text-right px-6">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className="hover:bg-accent rounded-lg">
+                              <MoreVertical className="h-5 w-5 text-muted-foreground" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem className="cursor-pointer">
+                          <DropdownMenuContent align="end" className="rounded-xl p-2 shadow-xl border-border/50 min-w-[160px]">
+                            <DropdownMenuItem className="cursor-pointer rounded-lg py-2">
                               <Eye className="mr-2 h-4 w-4" /> View Details
                             </DropdownMenuItem>
                             {user?.role === 'ADMIN' && (
                               <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="cursor-pointer">
+                                <DropdownMenuSeparator className="my-1 opacity-50" />
+                                <DropdownMenuItem className="cursor-pointer rounded-lg py-2">
                                   <Edit2 className="mr-2 h-4 w-4" /> Edit
                                 </DropdownMenuItem>
                                 {moa.isDeleted ? (
-                                  <DropdownMenuItem className="cursor-pointer text-green-600">
+                                  <DropdownMenuItem className="cursor-pointer text-green-600 rounded-lg py-2">
                                     <ArchiveRestore className="mr-2 h-4 w-4" /> Recover
                                   </DropdownMenuItem>
                                 ) : (
-                                  <DropdownMenuItem className="cursor-pointer text-destructive">
+                                  <DropdownMenuItem className="cursor-pointer text-destructive rounded-lg py-2">
                                     <Trash2 className="mr-2 h-4 w-4" /> Delete
                                   </DropdownMenuItem>
                                 )}
@@ -192,8 +189,8 @@ export default function MOAListPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={isStudent ? 6 : 7} className="h-24 text-center text-muted-foreground">
-                      No MOA records found.
+                    <TableCell colSpan={isStudent ? 6 : 7} className="h-32 text-center text-muted-foreground font-medium">
+                      No matching records found.
                     </TableCell>
                   </TableRow>
                 )}
