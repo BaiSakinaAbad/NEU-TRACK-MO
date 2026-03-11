@@ -71,6 +71,22 @@ export const MOCK_MOAS: MOA[] = [
     createdAt: '2024-03-01T08:00:00Z',
     updatedAt: '2024-03-01T08:00:00Z',
   },
+  {
+    id: 'moa-5',
+    hteId: 'HTE-2023-050',
+    companyName: 'Old Partnership Ltd.',
+    companyAddress: '55 Legacy Way, Quezon City',
+    contactPerson: 'Old Man Logan',
+    contactEmail: 'logan@oldpartnership.com',
+    industryType: 'Manufacturing',
+    effectiveDate: '2023-05-01',
+    expiryDate: '2024-05-01',
+    status: 'EXPIRED',
+    endorsedByCollege: 'CEA',
+    isDeleted: true,
+    createdAt: '2023-05-01T08:00:00Z',
+    updatedAt: '2023-05-01T08:00:00Z',
+  },
 ];
 
 export const MOCK_AUDIT_LOGS: AuditLog[] = [
@@ -83,5 +99,15 @@ export const MOCK_AUDIT_LOGS: AuditLog[] = [
     moaName: 'Tech Innovators Inc.',
     details: 'Initial MOA entry created',
     timestamp: '2024-01-01T10:00:00Z',
+  },
+  {
+    id: 'log-2',
+    userId: '1',
+    userName: 'System Admin',
+    operation: 'SOFT_DELETE',
+    moaId: 'moa-5',
+    moaName: 'Old Partnership Ltd.',
+    details: 'MOA moved to recycle bin',
+    timestamp: '2024-06-01T14:20:00Z',
   }
 ];
