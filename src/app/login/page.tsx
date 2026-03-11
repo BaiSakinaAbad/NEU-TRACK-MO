@@ -43,42 +43,42 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50/50 p-4 font-body">
       <Card className="w-full max-w-md shadow-2xl border-none p-6 bg-white">
-        <CardHeader className="space-y-1 text-center pb-8">
+        <CardHeader className="space-y-1 text-center pb-6">
           <CardTitle className="text-3xl font-bold tracking-tight text-primary">MOA Track</CardTitle>
           <CardDescription className="text-base text-muted-foreground">
             University Partnership Monitoring
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             {error && (
-              <Alert variant="destructive" className="bg-destructive/5 text-destructive border-destructive/20">
+              <Alert variant="destructive" className="bg-destructive/5 text-destructive border-destructive/20 py-2">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription className="text-xs">{error}</AlertDescription>
               </Alert>
             )}
             
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-bold text-foreground">Email</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-xs font-bold text-foreground">Email</Label>
               <Input 
                 id="email" 
                 type="email" 
                 placeholder="name@neu.edu.ph" 
-                className="bg-[#f8f9fa] border-none h-14 text-base px-4 focus-visible:ring-1 focus-visible:ring-primary/20"
+                className="bg-[#f8f9fa] border-none h-12 text-sm px-4 focus-visible:ring-1 focus-visible:ring-primary/20"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" title="Password" className="text-sm font-bold text-foreground">Password</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="password" title="Password" className="text-xs font-bold text-foreground">Password</Label>
               <div className="relative">
                 <Input 
                   id="password" 
                   type={showPassword ? "text" : "password"}
                   placeholder="........"
-                  className="bg-[#f8f9fa] border-none h-14 pr-12 text-base px-4 focus-visible:ring-1 focus-visible:ring-primary/20"
+                  className="bg-[#f8f9fa] border-none h-12 pr-12 text-sm px-4 focus-visible:ring-1 focus-visible:ring-primary/20"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -86,31 +86,30 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-4.5 text-muted-foreground hover:text-foreground transition-colors"
-                  style={{ top: '18px' }}
+                  className="absolute right-4 top-3.5 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
 
-            <Button className="w-full h-14 text-base font-semibold bg-primary hover:bg-primary/90 rounded-lg shadow-sm" type="submit" disabled={isLoading}>
+            <Button className="w-full h-12 text-sm font-semibold bg-primary hover:bg-primary/90 rounded-lg shadow-sm mt-2" type="submit" disabled={isLoading}>
               {isLoading ? 'Signing in...' : 'Log In with Email'}
             </Button>
 
-            <div className="relative flex items-center py-2">
+            <div className="relative flex items-center py-1">
               <div className="flex-grow border-t border-muted/60"></div>
-              <span className="flex-shrink mx-4 text-xs text-muted-foreground uppercase font-semibold tracking-wider">OR CONTINUE WITH</span>
+              <span className="flex-shrink mx-4 text-[10px] text-muted-foreground uppercase font-bold tracking-wider">OR CONTINUE WITH</span>
               <div className="flex-grow border-t border-muted/60"></div>
             </div>
 
             <Button 
               type="button" 
               variant="outline" 
-              className="w-full h-14 bg-[#e8eaed]/50 border-none hover:bg-[#e8eaed] text-[#3c4043] font-semibold rounded-lg transition-colors flex items-center justify-center gap-3"
+              className="w-full h-12 bg-[#f8f9fa] border-none hover:bg-[#e8eaed] text-[#3c4043] font-semibold rounded-lg transition-colors flex items-center justify-center gap-3"
               onClick={() => {}}
             >
-              <svg className="h-5 w-5" viewBox="0 0 24 24">
+              <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                   fill="#4285F4"
@@ -131,8 +130,8 @@ export default function LoginPage() {
               Log in with Google
             </Button>
           </CardContent>
-          <CardFooter className="pt-6 flex justify-center">
-            <p className="text-sm text-muted-foreground">
+          <CardFooter className="pt-2 flex justify-center">
+            <p className="text-[13px] text-muted-foreground">
               Only accounts with <span className="text-[#5f6368] font-medium underline underline-offset-4 decoration-muted/50">@neu.edu.ph</span> are permitted.
             </p>
           </CardFooter>
