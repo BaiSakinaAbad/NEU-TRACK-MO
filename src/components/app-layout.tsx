@@ -15,7 +15,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   if (!user) return <>{children}</>;
 
   const menuItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', roles: ['ADMIN', 'FACULTY', 'STUDENT'] },
+    { name: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', roles: ['ADMIN', 'FACULTY'] },
     { name: 'MOA List', icon: FileText, href: '/moas', roles: ['ADMIN', 'FACULTY', 'STUDENT'] },
     { name: 'User Management', icon: Users, href: '/admin/users', roles: ['ADMIN'] },
     { name: 'Audit Trail', icon: History, href: '/admin/audit', roles: ['ADMIN'] },

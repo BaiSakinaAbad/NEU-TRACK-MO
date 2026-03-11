@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useAuth } from '@/components/auth-context';
 import { MOCK_MOAS } from '@/lib/mock-data';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { FileCheck, FileClock, FileWarning, Briefcase } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { 
   BarChart, 
   Bar, 
@@ -18,6 +19,13 @@ import {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user?.role === 'STUDENT') {
+      router.push('/moas');
+    }
+  }, [user, router]);
 
   const stats = useMemo(() => {
     const active = MOCK_MOAS.filter(m => m.status.startsWith('APPROVED') && !m.isDeleted).length;
@@ -42,6 +50,8 @@ export default function DashboardPage() {
     { name: 'CED', value: 5 },
     { name: 'CHM', value: 15 },
   ];
+
+  if (user?.role === 'STUDENT') return null;
 
   return (
     <div className="space-y-8">

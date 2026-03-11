@@ -11,7 +11,11 @@ export default function Home() {
   useEffect(() => {
     if (!isLoading) {
       if (user) {
-        router.push('/dashboard');
+        if (user.role === 'STUDENT') {
+          router.push('/moas');
+        } else {
+          router.push('/dashboard');
+        }
       } else {
         router.push('/login');
       }
