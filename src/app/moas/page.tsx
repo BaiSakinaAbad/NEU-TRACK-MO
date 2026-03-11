@@ -7,20 +7,35 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore } from 'lucide-react';
+import { Plus, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore, AlertTriangle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useSearchParams } from 'next/navigation';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from '@/components/ui/alert-dialog';
 
 export default function MOAListPage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'ALL' | 'ACTIVE' | 'PROCESSING' | 'DELETED'>('ALL');
+  const [moas, setMoas] = useState(MOCK_MOAS);
+  
+  // Dialog state
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isHardDelete, setIsHardDelete] = useState(false);
 
   const isStudent = user?.role === 'STUDENT';
   const searchTerm = searchParams.get('search') || '';
 
   const filteredMOAs = useMemo(() => {
-    let list = MOCK_MOAS;
+    let list = moas;
 
     if (isStudent) {
       list = list.filter(m => m.status.startsWith('APPROVED') && !m.isDeleted);
@@ -49,7 +64,20 @@ export default function MOAListPage() {
     }
 
     return list;
-  }, [user, searchTerm, activeTab, isStudent]);
+  }, [user, searchTerm, activeTab, isStudent, moas]);
+
+  const handleSoftDelete = (id: string) => {
+    setMoas(moas.map(m => m.id === id ? { ...m, isDeleted: true } : m));
+  };
+
+  const handleRecover = (id: string) => {
+    setMoas(moas.map(m => m.id === id ? { ...m, isDeleted: false } : m));
+  };
+
+  const handleHardDelete = (id: string) => {
+    setMoas(moas.filter(m => m.id !== id));
+    setDeleteConfirmId(null);
+  };
 
   const getStatusBadge = (status: string) => {
     if (status.startsWith('APPROVED')) return <Badge className="bg-green-100 text-green-800 border-none hover:bg-green-100 font-bold px-3 py-1 rounded-lg">Approved</Badge>;
@@ -172,12 +200,29 @@ export default function MOAListPage() {
                                   <Edit2 className="mr-2 h-4 w-4" /> Edit
                                 </DropdownMenuItem>
                                 {moa.isDeleted ? (
-                                  <DropdownMenuItem className="cursor-pointer text-green-600 rounded-lg py-2">
-                                    <ArchiveRestore className="mr-2 h-4 w-4" /> Recover
-                                  </DropdownMenuItem>
+                                  <>
+                                    <DropdownMenuItem 
+                                      className="cursor-pointer text-green-600 rounded-lg py-2"
+                                      onClick={() => handleRecover(moa.id)}
+                                    >
+                                      <ArchiveRestore className="mr-2 h-4 w-4" /> Recover
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                      className="cursor-pointer text-destructive rounded-lg py-2"
+                                      onClick={() => {
+                                        setDeleteConfirmId(moa.id);
+                                        setIsHardDelete(true);
+                                      }}
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" /> Hard Delete
+                                    </DropdownMenuItem>
+                                  </>
                                 ) : (
-                                  <DropdownMenuItem className="cursor-pointer text-destructive rounded-lg py-2">
-                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                  <DropdownMenuItem 
+                                    className="cursor-pointer text-destructive rounded-lg py-2"
+                                    onClick={() => handleSoftDelete(moa.id)}
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" /> Move to Bin
                                   </DropdownMenuItem>
                                 )}
                               </>
@@ -199,6 +244,30 @@ export default function MOAListPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Permanent Delete Confirmation */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Permanent Deletion
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently remove the agreement from the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-destructive hover:bg-destructive/90 rounded-xl font-bold"
+              onClick={() => deleteConfirmId && handleHardDelete(deleteConfirmId)}
+            >
+              Permanently Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
