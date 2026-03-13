@@ -6,13 +6,14 @@ import {
   signOut, 
   signInWithEmailAndPassword, 
   GoogleAuthProvider, 
-  signInWithPopup,
-  User as FirebaseUser
+  signInWithPopup
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useFirestore, useAuth as useFirebaseAuth } from '@/firebase';
-import { User, UserRole } from '@/lib/types';
+import { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 interface LoginResponse {
   success: boolean;
@@ -45,7 +46,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
 
       if (firebaseUser) {
-        // Enforce domain check
         if (!firebaseUser.email?.endsWith('@neu.edu.ph')) {
           await signOut(auth);
           setUser(null);
@@ -63,12 +63,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (userData.isBlocked) {
               await signOut(auth);
               setUser(null);
-              setError('Your account has been blocked. Please contact an administrator.');
+              setError('Your account has been blocked.');
             } else {
               setUser({ ...userData, id: firebaseUser.uid });
             }
           } else {
-            // New user logic - Default to STUDENT role
             const newUser: User = {
               id: firebaseUser.uid,
               email: firebaseUser.email || '',
@@ -76,20 +75,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               role: 'STUDENT',
               isBlocked: false,
             };
-            // Ensure document is created before continuing
-            await setDoc(userDocRef, newUser);
-            setUser(newUser);
+            
+            setDoc(userDocRef, newUser)
+              .then(() => setUser(newUser))
+              .catch(async (err) => {
+                const permissionError = new FirestorePermissionError({
+                  path: userDocRef.path,
+                  operation: 'create',
+                  requestResourceData: newUser,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+              });
           }
         } catch (err: any) {
-          console.error('Firestore initialization error:', err);
-          // If Firestore is not ready or rules fail, we still want to stop loading
-          // but user will be null, triggering redirect to login
-          setUser(null);
           if (err.code === 'permission-denied') {
-            setError('Access denied. Please ensure your email domain is @neu.edu.ph and Firestore rules are set to Test Mode.');
-          } else {
-            setError('Failed to sync user profile with database.');
+            const permissionError = new FirestorePermissionError({
+              path: `/users/${firebaseUser.uid}`,
+              operation: 'get',
+            });
+            errorEmitter.emit('permission-error', permissionError);
           }
+          setUser(null);
         }
       } else {
         setUser(null);
@@ -105,17 +111,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await signInWithEmailAndPassword(auth, email, password);
       return { success: true };
     } catch (error: any) {
-      console.error('Login error:', error);
-      let message = 'Invalid email or password. Please try again.';
-      
+      let message = 'Invalid email or password.';
       if (error.code === 'auth/configuration-not-found') {
         message = "Email/Password sign-in is not enabled in Firebase Console.";
-      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        message = "Incorrect email or password.";
-      } else if (error.code === 'auth/invalid-credential') {
-        message = "Invalid credentials provided.";
       }
-      
       return { success: false, message };
     }
   };
@@ -126,7 +125,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await signInWithPopup(auth, provider);
     } catch (error: any) {
-      console.error('Google login error:', error);
       setError(error.message);
     }
   };
