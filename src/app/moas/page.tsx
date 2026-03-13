@@ -25,13 +25,17 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function MOAListPage() {
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const firestore = useFirestore();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'ALL' | 'ACTIVE' | 'PROCESSING' | 'DELETED'>('ALL');
   
-  const moasQuery = useMemo(() => query(collection(firestore, 'moas'), orderBy('updatedAt', 'desc')), [firestore]);
-  const { data: moas, isLoading } = useCollection<MOA>(moasQuery);
+  const moasQuery = useMemo(() => {
+    if (!user) return null; // Guard against unauthenticated queries
+    return query(collection(firestore, 'moas'), orderBy('updatedAt', 'desc'));
+  }, [firestore, user]);
+
+  const { data: moas, isLoading: isDataLoading } = useCollection<MOA>(moasQuery);
   
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
@@ -145,7 +149,7 @@ export default function MOAListPage() {
         )}
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            {isLoading ? (
+            {isDataLoading || isAuthLoading ? (
               <div className="flex flex-col items-center justify-center h-64 gap-3">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <p className="text-muted-foreground font-medium">Loading agreements...</p>

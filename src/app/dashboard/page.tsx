@@ -20,18 +20,22 @@ import {
 } from 'recharts';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
 
-  const moasQuery = useMemo(() => query(collection(firestore, 'moas')), [firestore]);
-  const { data: moas, isLoading } = useCollection<MOA>(moasQuery);
+  const moasQuery = useMemo(() => {
+    if (!user || user.role === 'STUDENT') return null;
+    return query(collection(firestore, 'moas'));
+  }, [firestore, user]);
+
+  const { data: moas, isLoading: isDataLoading } = useCollection<MOA>(moasQuery);
 
   useEffect(() => {
-    if (user?.role === 'STUDENT') {
+    if (!isAuthLoading && user?.role === 'STUDENT') {
       router.push('/moas');
     }
-  }, [user, router]);
+  }, [user, isAuthLoading, router]);
 
   const stats = useMemo(() => {
     if (!moas) return { active: 0, processing: 0, expired: 0, expiring: 0, totalPartners: 0 };
@@ -64,15 +68,15 @@ export default function DashboardPage() {
       .slice(0, 5);
   }, [moas]);
 
-  if (user?.role === 'STUDENT') return null;
-
-  if (isLoading) {
+  if (isAuthLoading || (user && user.role !== 'STUDENT' && isDataLoading)) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }
+
+  if (!user || user.role === 'STUDENT') return null;
 
   return (
     <div className="space-y-8">
