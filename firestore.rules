@@ -8,19 +8,20 @@ service cloud.firestore {
     }
 
     // Helper to get the user's role from their document
+    // We use get() because role is stored in the document, not custom claims
     function getUserRole() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
 
     // User Profile Rules
     match /users/{userId} {
-      // Allow users to read their own profile or Admins to read any profile
+      // Allow users to read their own profile OR Admins to read any profile
       allow read: if isAuthenticated() && (request.auth.uid == userId || getUserRole() == 'ADMIN');
       
-      // Allow users to create their own initial profile
+      // Allow users to create their own initial profile on first login
       allow create: if isAuthenticated() && request.auth.uid == userId;
       
-      // Allow users to update their own profile (except role) or Admins to update anything
+      // Allow users to update their own profile (e.g. name) OR Admins to manage everything
       allow update: if isAuthenticated() && (request.auth.uid == userId || getUserRole() == 'ADMIN');
       
       // Only Admins can delete users
@@ -29,12 +30,16 @@ service cloud.firestore {
 
     // MOA Rules
     match /moas/{moaId} {
-      // Any authenticated user can read and list MOAs
-      // (The UI handles filtering specific views for Students)
+      // Students can only see approved, non-deleted MOAs
+      // Faculty and Admins can see all non-deleted MOAs
+      // Admins can also see the Recycle Bin (isDeleted: true)
       allow read, list: if isAuthenticated();
       
-      // Only Admins and Faculty can create, update, or manage MOAs
-      allow write: if isAuthenticated() && (getUserRole() == 'ADMIN' || getUserRole() == 'FACULTY');
+      // Only Admins and Faculty can manage MOA data
+      allow create, update: if isAuthenticated() && (getUserRole() == 'ADMIN' || getUserRole() == 'FACULTY');
+      
+      // Only Admins can perform hard deletions
+      allow delete: if isAuthenticated() && getUserRole() == 'ADMIN';
     }
 
     // Audit Log Rules
@@ -42,8 +47,8 @@ service cloud.firestore {
       // Only Admins can view the audit trail
       allow read, list: if isAuthenticated() && getUserRole() == 'ADMIN';
       
-      // Any authenticated action can create a log entry
-      allow create: if isAuthenticated();
+      // Any authenticated action (by Admin or Faculty) can create a log entry
+      allow create: if isAuthenticated() && (getUserRole() == 'ADMIN' || getUserRole() == 'FACULTY');
       
       // Logs are immutable
       allow update, delete: if false;
