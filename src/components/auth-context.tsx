@@ -41,8 +41,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setIsLoading(true);
       setError(null);
+
       if (firebaseUser) {
+        // Enforce domain check
         if (!firebaseUser.email?.endsWith('@neu.edu.ph')) {
           await signOut(auth);
           setUser(null);
@@ -69,21 +72,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const newUser: User = {
               id: firebaseUser.uid,
               email: firebaseUser.email || '',
-              name: firebaseUser.displayName || 'New User',
+              name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'New User',
               role: 'STUDENT',
               isBlocked: false,
             };
+            // Ensure document is created before continuing
             await setDoc(userDocRef, newUser);
             setUser(newUser);
           }
         } catch (err: any) {
-          console.error('Firestore error:', err);
-          if (err.code === 'unavailable' || err.message?.includes('offline')) {
-            setError('Database connection lost. Please check your internet or ensure Firestore is enabled in the Firebase Console.');
+          console.error('Firestore initialization error:', err);
+          // If Firestore is not ready or rules fail, we still want to stop loading
+          // but user will be null, triggering redirect to login
+          setUser(null);
+          if (err.code === 'permission-denied') {
+            setError('Access denied. Please ensure your email domain is @neu.edu.ph and Firestore rules are set to Test Mode.');
           } else {
-            setError('Failed to load user profile. Please refresh the page.');
+            setError('Failed to sync user profile with database.');
           }
-          // We don't sign out here so they can try to refresh/reconnect
         }
       } else {
         setUser(null);
@@ -100,22 +106,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: true };
     } catch (error: any) {
       console.error('Login error:', error);
+      let message = 'Invalid email or password. Please try again.';
+      
       if (error.code === 'auth/configuration-not-found') {
-        return { 
-          success: false, 
-          message: "Email/Password sign-in is not enabled. Please go to the Firebase Console > Authentication > Sign-in method and enable 'Email/Password'." 
-        };
+        message = "Email/Password sign-in is not enabled in Firebase Console.";
+      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        message = "Incorrect email or password.";
+      } else if (error.code === 'auth/invalid-credential') {
+        message = "Invalid credentials provided.";
       }
-      if (error.code === 'auth/invalid-api-key') {
-        return {
-          success: false,
-          message: "Invalid API Key. Please ensure your .env.local file contains the correct Firebase credentials."
-        };
-      }
-      return { 
-        success: false, 
-        message: error.message || "Invalid email or password. Please try again." 
-      };
+      
+      return { success: false, message };
     }
   };
 
