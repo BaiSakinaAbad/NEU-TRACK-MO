@@ -17,7 +17,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -33,7 +33,7 @@ export default function LoginPage() {
 
     const success = await login(email, password);
     if (success) {
-      router.push('/dashboard');
+      router.push('/');
     } else {
       setError('Invalid email or password. Please try again.');
       setIsLoading(false);
@@ -107,7 +107,9 @@ export default function LoginPage() {
               type="button" 
               variant="outline" 
               className="w-full h-12 bg-[#f8f9fa] border-none hover:bg-[#e8eaed] text-[#3c4043] font-semibold rounded-lg transition-colors flex items-center justify-center gap-3"
-              onClick={() => {}}
+              onClick={() => {
+                loginWithGoogle().then(() => router.push('/'));
+              }}
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path

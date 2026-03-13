@@ -1,0 +1,71 @@
+
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "System user with role-based access",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["STUDENT", "FACULTY", "ADMIN"] },
+        "college": { "type": "string" },
+        "isBlocked": { "type": "boolean" }
+      },
+      "required": ["name", "email", "role", "isBlocked"]
+    },
+    "MOA": {
+      "title": "Memorandum of Agreement",
+      "description": "Partnership agreement between the university and an HTE",
+      "type": "object",
+      "properties": {
+        "hteId": { "type": "string" },
+        "companyName": { "type": "string" },
+        "companyAddress": { "type": "string" },
+        "contactPerson": { "type": "string" },
+        "contactEmail": { "type": "string", "format": "email" },
+        "industryType": { "type": "string" },
+        "effectiveDate": { "type": "string", "format": "date" },
+        "expiryDate": { "type": "string", "format": "date" },
+        "status": { "type": "string" },
+        "endorsedByCollege": { "type": "string" },
+        "isDeleted": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["companyName", "status", "isDeleted"]
+    },
+    "AuditLog": {
+      "title": "Audit Log",
+      "description": "Log entry for administrative actions",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "operation": { "type": "string", "enum": ["CREATE", "UPDATE", "SOFT_DELETE", "RECOVER"] },
+        "moaId": { "type": "string" },
+        "moaName": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "operation", "timestamp"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com", "password"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile data"
+    },
+    "/moas/{moaId}": {
+      "schema": "MOA",
+      "description": "MOA documents"
+    },
+    "/audit_logs/{logId}": {
+      "schema": "AuditLog",
+      "description": "System audit trail"
+    }
+  }
+}
