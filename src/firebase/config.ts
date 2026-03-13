@@ -6,3 +6,11 @@ export const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
+
+// Simple validation to help catch common setup errors
+if (typeof window !== 'undefined' && !firebaseConfig.apiKey) {
+  console.warn(
+    'Firebase API Key is missing. Please ensure you have added the correct values to your .env.local file ' +
+    'and that they match your project settings in the Firebase Console.'
+  );
+}
