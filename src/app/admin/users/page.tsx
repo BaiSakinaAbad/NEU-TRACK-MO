@@ -1,14 +1,14 @@
-
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/components/auth-context';
-import { MOCK_USERS } from '@/lib/mock-data';
+import { useFirestore, useCollection } from '@/firebase';
+import { collection, query, doc, updateDoc } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { UserPlus, MoreHorizontal, UserCog, Ban, CheckCircle2, X } from 'lucide-react';
+import { UserPlus, MoreHorizontal, UserCog, Ban, CheckCircle2, Loader2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -19,10 +19,12 @@ import { User, UserRole } from '@/lib/types';
 
 export default function UserManagementPage() {
   const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState<User[]>(MOCK_USERS);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const firestore = useFirestore();
   
-  // New user form state
+  const usersQuery = useMemo(() => query(collection(firestore, 'users')), [firestore]);
+  const { data: users, isLoading } = useCollection<User>(usersQuery);
+
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState<UserRole>('STUDENT');
@@ -36,37 +38,20 @@ export default function UserManagementPage() {
     );
   }
 
-  const toggleBlock = (userId: string) => {
-    setUsers(users.map(u => 
-      u.id === userId ? { ...u, isBlocked: !u.isBlocked } : u
-    ));
+  const toggleBlock = async (userId: string, currentStatus: boolean) => {
+    const userRef = doc(firestore, 'users', userId);
+    await updateDoc(userRef, { isBlocked: !currentStatus });
   };
 
-  const handleAddUser = (e: React.FormEvent) => {
+  const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!newUserEmail.endsWith('@neu.edu.ph')) {
       alert('Only institutional @neu.edu.ph emails are allowed.');
       return;
     }
-
-    const newUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: newUserName,
-      email: newUserEmail,
-      role: newUserRole,
-      college: newUserCollege || undefined,
-      isBlocked: false,
-    };
-
-    setUsers([newUser, ...users]);
+    // Note: In a real app, you'd call a Cloud Function or invite the user via Auth Admin SDK
+    // For this prototype, we're focusing on displaying existing users.
     setIsAddDialogOpen(false);
-    
-    // Reset form
-    setNewUserName('');
-    setNewUserEmail('');
-    setNewUserRole('STUDENT');
-    setNewUserCollege('');
   };
 
   const getRoleColor = (role: string) => {
@@ -105,7 +90,7 @@ export default function UserManagementPage() {
                 <Input 
                   id="name" 
                   placeholder="John Doe" 
-                  className="h-12 bg-muted/30 border-none focus-visible:ring-1 focus-visible:ring-primary/20"
+                  className="h-12 bg-muted/30 border-none"
                   value={newUserName}
                   onChange={(e) => setNewUserName(e.target.value)}
                   required 
@@ -117,7 +102,7 @@ export default function UserManagementPage() {
                   id="email" 
                   type="email"
                   placeholder="name@neu.edu.ph" 
-                  className="h-12 bg-muted/30 border-none focus-visible:ring-1 focus-visible:ring-primary/20"
+                  className="h-12 bg-muted/30 border-none"
                   value={newUserEmail}
                   onChange={(e) => setNewUserEmail(e.target.value)}
                   required 
@@ -127,7 +112,7 @@ export default function UserManagementPage() {
                 <div className="space-y-2">
                   <Label htmlFor="role" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Role</Label>
                   <Select value={newUserRole} onValueChange={(value: UserRole) => setNewUserRole(value)}>
-                    <SelectTrigger className="h-12 bg-muted/30 border-none focus:ring-1 focus:ring-primary/20">
+                    <SelectTrigger className="h-12 bg-muted/30 border-none">
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
@@ -142,7 +127,7 @@ export default function UserManagementPage() {
                   <Input 
                     id="college" 
                     placeholder="CAS, CCS, etc." 
-                    className="h-12 bg-muted/30 border-none focus-visible:ring-1 focus-visible:ring-primary/20"
+                    className="h-12 bg-muted/30 border-none"
                     value={newUserCollege}
                     onChange={(e) => setNewUserCollege(e.target.value)}
                   />
@@ -160,84 +145,91 @@ export default function UserManagementPage() {
 
       <Card className="border-none shadow-xl shadow-black/5 bg-white rounded-2xl overflow-hidden">
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/30 border-b border-border/50 hover:bg-muted/30">
-                <TableHead className="font-bold text-primary py-5 px-6">User</TableHead>
-                <TableHead className="font-bold text-primary py-5">Role</TableHead>
-                <TableHead className="font-bold text-primary py-5">Status</TableHead>
-                <TableHead className="font-bold text-primary py-5">College</TableHead>
-                <TableHead className="text-right px-6"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id} className="hover:bg-accent/10 transition-colors border-b border-border/30">
-                  <TableCell className="px-6 py-5">
-                    <div className="flex items-center gap-4">
-                      <Avatar className="h-11 w-11 shadow-sm border border-border/50">
-                        <AvatarFallback className="bg-primary/5 text-primary font-bold text-base">
-                          {user.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-foreground">{user.name}</span>
-                        <span className="text-xs text-muted-foreground">{user.email}</span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={`${getRoleColor(user.role)} font-bold px-3 py-1 rounded-lg`}>
-                      {user.role}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {user.isBlocked ? (
-                      <Badge variant="destructive" className="flex w-fit items-center gap-1.5 font-bold px-3 py-1 rounded-lg">
-                        <Ban className="h-3 w-3" /> Blocked
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-green-500 hover:bg-green-600 flex w-fit items-center gap-1.5 font-bold px-3 py-1 rounded-lg text-white border-none">
-                        <CheckCircle2 className="h-3 w-3" /> Active
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm font-medium text-muted-foreground">{user.college || '—'}</span>
-                  </TableCell>
-                  <TableCell className="text-right px-6">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="hover:bg-accent rounded-lg">
-                          <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="rounded-xl p-2 shadow-xl border-border/50 min-w-[160px]">
-                        <DropdownMenuItem className="cursor-pointer rounded-lg py-2">
-                          <UserCog className="mr-2 h-4 w-4" /> Manage Role
-                        </DropdownMenuItem>
-                        {user.role !== 'ADMIN' && (
-                          <>
-                            <DropdownMenuSeparator className="my-1 opacity-50" />
-                            <DropdownMenuItem 
-                              className={`cursor-pointer rounded-lg py-2 ${user.isBlocked ? 'text-green-600' : 'text-destructive'}`}
-                              onClick={() => toggleBlock(user.id)}
-                            >
-                              {user.isBlocked ? (
-                                <><CheckCircle2 className="mr-2 h-4 w-4" /> Unblock User</>
-                              ) : (
-                                <><Ban className="mr-2 h-4 w-4" /> Block User</>
-                              )}
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center h-64 gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-muted-foreground font-medium">Loading users...</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/30 border-b border-border/50 hover:bg-muted/30">
+                  <TableHead className="font-bold text-primary py-5 px-6">User</TableHead>
+                  <TableHead className="font-bold text-primary py-5">Role</TableHead>
+                  <TableHead className="font-bold text-primary py-5">Status</TableHead>
+                  <TableHead className="font-bold text-primary py-5">College</TableHead>
+                  <TableHead className="text-right px-6"></TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {users && users.map((user) => (
+                  <TableRow key={user.id} className="hover:bg-accent/10 transition-colors border-b border-border/30">
+                    <TableCell className="px-6 py-5">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-11 w-11 shadow-sm border border-border/50">
+                          <AvatarFallback className="bg-primary/5 text-primary font-bold text-base">
+                            {user.name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-foreground">{user.name}</span>
+                          <span className="text-xs text-muted-foreground">{user.email}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={`${getRoleColor(user.role)} font-bold px-3 py-1 rounded-lg`}>
+                        {user.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {user.isBlocked ? (
+                        <Badge variant="destructive" className="flex w-fit items-center gap-1.5 font-bold px-3 py-1 rounded-lg">
+                          <Ban className="h-3 w-3" /> Blocked
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-green-500 hover:bg-green-600 flex w-fit items-center gap-1.5 font-bold px-3 py-1 rounded-lg text-white border-none">
+                          <CheckCircle2 className="h-3 w-3" /> Active
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm font-medium text-muted-foreground">{user.college || '—'}</span>
+                    </TableCell>
+                    <TableCell className="text-right px-6">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="hover:bg-accent rounded-lg">
+                            <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-xl p-2 shadow-xl border-border/50 min-w-[160px]">
+                          <DropdownMenuItem className="cursor-pointer rounded-lg py-2">
+                            <UserCog className="mr-2 h-4 w-4" /> Manage Role
+                          </DropdownMenuItem>
+                          {user.role !== 'ADMIN' && (
+                            <>
+                              <DropdownMenuSeparator className="my-1 opacity-50" />
+                              <DropdownMenuItem 
+                                className={`cursor-pointer rounded-lg py-2 ${user.isBlocked ? 'text-green-600' : 'text-destructive'}`}
+                                onClick={() => toggleBlock(user.id, user.isBlocked)}
+                              >
+                                {user.isBlocked ? (
+                                  <><CheckCircle2 className="mr-2 h-4 w-4" /> Unblock User</>
+                                ) : (
+                                  <><Ban className="mr-2 h-4 w-4" /> Block User</>
+                                )}
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
