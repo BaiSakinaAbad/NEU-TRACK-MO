@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -31,11 +30,11 @@ export default function LoginPage() {
       return;
     }
 
-    const success = await login(email, password);
-    if (success) {
+    const response = await login(email, password);
+    if (response.success) {
       router.push('/');
     } else {
-      setError('Invalid email or password. Please try again.');
+      setError(response.message || 'Invalid email or password. Please try again.');
       setIsLoading(false);
     }
   };
@@ -54,7 +53,7 @@ export default function LoginPage() {
             {error && (
               <Alert variant="destructive" className="bg-destructive/5 text-destructive border-destructive/20 py-2">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="text-xs">{error}</AlertDescription>
+                <AlertDescription className="text-xs whitespace-pre-wrap">{error}</AlertDescription>
               </Alert>
             )}
             

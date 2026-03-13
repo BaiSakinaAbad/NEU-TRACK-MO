@@ -14,9 +14,14 @@ import { useFirestore, useAuth as useFirebaseAuth } from '@/firebase';
 import { User, UserRole } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 
+interface LoginResponse {
+  success: boolean;
+  message?: string;
+}
+
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<LoginResponse>;
   loginWithGoogle: () => Promise<void>;
   logout: () => void;
   isLoading: boolean;
@@ -74,13 +79,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, [auth, firestore]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<LoginResponse> => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      return true;
-    } catch (error) {
+      return { success: true };
+    } catch (error: any) {
       console.error('Login error:', error);
-      return false;
+      if (error.code === 'auth/configuration-not-found') {
+        return { 
+          success: false, 
+          message: "Email/Password sign-in is not enabled. Please go to the Firebase Console > Authentication > Sign-in method and enable 'Email/Password'." 
+        };
+      }
+      return { 
+        success: false, 
+        message: error.message || "Invalid email or password. Please try again." 
+      };
     }
   };
 
