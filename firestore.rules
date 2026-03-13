@@ -2,27 +2,48 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check if user is authenticated
+    // Helper function to check if user is authenticated and has correct domain
     function isAuthenticated() {
       return request.auth != null && request.auth.token.email.endsWith('@neu.edu.ph');
     }
 
+    // Helper to check if the current user is an admin
+    // Note: We check the document directly to avoid recursive issues
+    function isAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
+    }
+
     // User Profile Rules
     match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow write: if request.auth.uid == userId || (isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN');
+      // Allow a user to read their own profile, or an admin to read any profile
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      
+      // Allow a user to create/update their own profile
+      // Admins can also manage profiles (e.g., blocking users)
+      allow write: if request.auth != null && (request.auth.uid == userId || isAdmin());
     }
 
     // MOA Rules
     match /moas/{moaId} {
+      // Any authenticated institutional user can read MOAs
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
+      
+      // Only Admins can create, update, or soft-delete MOAs
+      allow write: if isAdmin();
     }
 
     // Audit Log Rules
     match /audit_logs/{logId} {
-      allow read: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
+      // Only Admins can view the audit trail
+      allow read: if isAdmin();
+      
+      // Any authenticated action can create a log entry
       allow create: if isAuthenticated();
+      
+      // Logs are immutable
+      allow update, delete: if false;
     }
   }
 }
