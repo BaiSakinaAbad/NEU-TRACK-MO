@@ -11,8 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Plus, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore, AlertTriangle, Loader2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useSearchParams } from 'next/navigation';
-import { softDeleteMOA, recoverMOA } from '@/lib/moa-service';
-import { MOA } from '@/lib/types';
+import { softDeleteMOA, recoverMOA, createMOA } from '@/lib/moa-service';
+import { MOA, MOAStatus, MOA_STATUS_LABELS } from '@/lib/types';
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -23,15 +23,43 @@ import {
   AlertDialogHeader, 
   AlertDialogTitle 
 } from '@/components/ui/alert-dialog';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger, 
+  DialogFooter, 
+  DialogDescription 
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function MOAListPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const firestore = useFirestore();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'ALL' | 'ACTIVE' | 'PROCESSING' | 'DELETED'>('ALL');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // Form State
+  const [formData, setFormData] = useState({
+    companyName: '',
+    hteId: '',
+    companyAddress: '',
+    contactPerson: '',
+    contactEmail: '',
+    industryType: '',
+    effectiveDate: '',
+    expiryDate: '',
+    status: 'PROCESSING_PARTNER' as MOAStatus,
+    endorsedByCollege: '',
+  });
+
   const moasQuery = useMemo(() => {
-    if (!user) return null; // Guard against unauthenticated queries
+    if (!user) return null;
     return query(collection(firestore, 'moas'), orderBy('updatedAt', 'desc'));
   }, [firestore, user]);
 
@@ -40,6 +68,7 @@ export default function MOAListPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const isStudent = user?.role === 'STUDENT';
+  const isFacultyOrAdmin = user?.role === 'ADMIN' || user?.role === 'FACULTY';
   const searchTerm = searchParams.get('search') || '';
 
   const filteredMOAs = useMemo(() => {
@@ -74,6 +103,33 @@ export default function MOAListPage() {
     return list;
   }, [user, searchTerm, activeTab, isStudent, moas]);
 
+  const handleAddMOA = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    
+    setIsSubmitting(true);
+    try {
+      await createMOA(firestore, user, formData);
+      setIsAddDialogOpen(false);
+      setFormData({
+        companyName: '',
+        hteId: '',
+        companyAddress: '',
+        contactPerson: '',
+        contactEmail: '',
+        industryType: '',
+        effectiveDate: '',
+        expiryDate: '',
+        status: 'PROCESSING_PARTNER',
+        endorsedByCollege: '',
+      });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSoftDelete = async (moa: MOA) => {
     if (!user) return;
     await softDeleteMOA(firestore, user, moa);
@@ -99,10 +155,136 @@ export default function MOAListPage() {
           <h1 className="text-4xl font-extrabold tracking-tight text-primary">Memorandum of Agreements</h1>
           <p className="text-muted-foreground mt-2 text-lg">Manage and track all university partnerships.</p>
         </div>
-        {user?.role === 'ADMIN' && (
-          <Button className="bg-primary hover:bg-primary/90 h-12 px-6 rounded-xl shadow-lg shadow-primary/20 transition-all font-bold">
-            <Plus className="mr-2 h-5 w-5" /> Add New MOA
-          </Button>
+        
+        {isFacultyOrAdmin && (
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary hover:bg-primary/90 h-12 px-6 rounded-xl shadow-lg shadow-primary/20 transition-all font-bold">
+                <Plus className="mr-2 h-5 w-5" /> Add New MOA
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold text-primary">New Agreement Record</DialogTitle>
+                <DialogDescription>
+                  Enter the details of the partnership and Host Training Establishment (HTE).
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleAddMOA} className="space-y-6 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2 col-span-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">Company Name</Label>
+                    <Input 
+                      placeholder="e.g. Acme Corp Philippines" 
+                      className="h-12 bg-muted/30 border-none"
+                      value={formData.companyName}
+                      onChange={(e) => setFormData({...formData, companyName: e.target.value})}
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">HTE ID / Reference</Label>
+                    <Input 
+                      placeholder="HTE-2024-XXX" 
+                      className="h-12 bg-muted/30 border-none"
+                      value={formData.hteId}
+                      onChange={(e) => setFormData({...formData, hteId: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">Industry Type</Label>
+                    <Input 
+                      placeholder="e.g. Technology, Finance" 
+                      className="h-12 bg-muted/30 border-none"
+                      value={formData.industryType}
+                      onChange={(e) => setFormData({...formData, industryType: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">Company Address</Label>
+                    <Input 
+                      placeholder="Full business address" 
+                      className="h-12 bg-muted/30 border-none"
+                      value={formData.companyAddress}
+                      onChange={(e) => setFormData({...formData, companyAddress: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">Contact Person</Label>
+                    <Input 
+                      placeholder="Authorized Representative" 
+                      className="h-12 bg-muted/30 border-none"
+                      value={formData.contactPerson}
+                      onChange={(e) => setFormData({...formData, contactPerson: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">Contact Email</Label>
+                    <Input 
+                      type="email"
+                      placeholder="representative@company.com" 
+                      className="h-12 bg-muted/30 border-none"
+                      value={formData.contactEmail}
+                      onChange={(e) => setFormData({...formData, contactEmail: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">Effective Date</Label>
+                    <Input 
+                      type="date"
+                      className="h-12 bg-muted/30 border-none"
+                      value={formData.effectiveDate}
+                      onChange={(e) => setFormData({...formData, effectiveDate: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">Expiry Date</Label>
+                    <Input 
+                      type="date"
+                      className="h-12 bg-muted/30 border-none"
+                      value={formData.expiryDate}
+                      onChange={(e) => setFormData({...formData, expiryDate: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">College Endorsement</Label>
+                    <Input 
+                      placeholder="e.g. CAS, CCS, CBA" 
+                      className="h-12 bg-muted/30 border-none"
+                      value={formData.endorsedByCollege}
+                      onChange={(e) => setFormData({...formData, endorsedByCollege: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">Initial Status</Label>
+                    <Select 
+                      value={formData.status} 
+                      onValueChange={(v: MOAStatus) => setFormData({...formData, status: v})}
+                    >
+                      <SelectTrigger className="h-12 bg-muted/30 border-none">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(MOA_STATUS_LABELS).map(([val, label]) => (
+                          <SelectItem key={val} value={val}>{label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter className="pt-4">
+                  <Button 
+                    type="submit" 
+                    className="w-full h-12 bg-primary font-bold rounded-xl shadow-lg shadow-primary/20"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Register Agreement'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         )}
       </div>
 
@@ -204,7 +386,7 @@ export default function MOAListPage() {
                               <DropdownMenuItem className="cursor-pointer rounded-lg py-2">
                                 <Eye className="mr-2 h-4 w-4" /> View Details
                               </DropdownMenuItem>
-                              {user?.role === 'ADMIN' && (
+                              {isFacultyOrAdmin && (
                                 <>
                                   <DropdownMenuSeparator className="my-1 opacity-50" />
                                   <DropdownMenuItem className="cursor-pointer rounded-lg py-2">
@@ -218,12 +400,14 @@ export default function MOAListPage() {
                                       >
                                         <ArchiveRestore className="mr-2 h-4 w-4" /> Recover
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem 
-                                        className="cursor-pointer text-destructive rounded-lg py-2"
-                                        onClick={() => setDeleteConfirmId(moa.id)}
-                                      >
-                                        <Trash2 className="mr-2 h-4 w-4" /> Hard Delete
-                                      </DropdownMenuItem>
+                                      {user?.role === 'ADMIN' && (
+                                        <DropdownMenuItem 
+                                          className="cursor-pointer text-destructive rounded-lg py-2"
+                                          onClick={() => setDeleteConfirmId(moa.id)}
+                                        >
+                                          <Trash2 className="mr-2 h-4 w-4" /> Hard Delete
+                                        </DropdownMenuItem>
+                                      )}
                                     </>
                                   ) : (
                                     <DropdownMenuItem 
@@ -254,7 +438,6 @@ export default function MOAListPage() {
         </CardContent>
       </Card>
 
-      {/* Permanent Delete Confirmation placeholder - Implement actual hard delete in service if needed */}
       <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
