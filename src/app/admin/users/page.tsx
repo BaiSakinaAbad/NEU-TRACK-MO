@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useCallback, useMemo } from 'react';
@@ -9,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, History, Ban, CheckCircle2, Clock, Hash } from 'lucide-react';
+import { MoreHorizontal, History, Ban, CheckCircle2, Clock, Hash, Search } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -28,7 +27,6 @@ export default function UserManagementPage() {
   const searchParams = useSearchParams();
   const searchTerm = searchParams.get('search') || '';
   
-  // Stabilized query to prevent infinite render loops
   const usersQuery = useMemoFirebase(() => {
     return query(collection(firestore, 'users'));
   }, [firestore]);
@@ -135,88 +133,97 @@ export default function UserManagementPage() {
                   </TableRow>
                 ))
               ) : (
-                filteredUsers.map((user) => (
-                  <TableRow key={user.id} className="hover:bg-accent/10 transition-colors border-b border-border/30">
-                    <TableCell className="px-6 py-5">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-11 w-11 shadow-sm border border-border/50">
-                          <AvatarFallback className="bg-primary/5 text-primary font-bold text-base">
-                            {user.name.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-foreground">{user.name}</span>
-                          <span className="text-xs text-muted-foreground">{user.email}</span>
+                <>
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user.id} className="hover:bg-accent/10 transition-colors border-b border-border/30">
+                      <TableCell className="px-6 py-5">
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-11 w-11 shadow-sm border border-border/50">
+                            <AvatarFallback className="bg-primary/5 text-primary font-bold text-base">
+                              {user.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-foreground">{user.name}</span>
+                            <span className="text-xs text-muted-foreground">{user.email}</span>
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={`${getRoleColor(user.role)} font-bold px-3 py-1 rounded-lg`}>
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {user.isBlocked ? (
-                        <Badge variant="destructive" className="flex w-fit items-center gap-1.5 font-bold px-3 py-1 rounded-lg">
-                          <Ban className="h-3 w-3" /> Blocked
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={`${getRoleColor(user.role)} font-bold px-3 py-1 rounded-lg`}>
+                          {user.role}
                         </Badge>
-                      ) : (
-                        <Badge className="bg-green-500 hover:bg-green-600 flex w-fit items-center gap-1.5 font-bold px-3 py-1 rounded-lg text-white border-none">
-                          <CheckCircle2 className="h-3 w-3" /> Active
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm font-medium text-muted-foreground">{user.college || '—'}</span>
-                    </TableCell>
-                    <TableCell className="text-right px-6">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="hover:bg-accent rounded-lg">
-                            <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-xl p-2 shadow-xl border-border/50 min-w-[160px]">
-                          <DropdownMenuItem 
-                            className="cursor-pointer rounded-lg py-2"
-                            onSelect={() => handleViewActivity(user)}
-                          >
-                            <History className="mr-2 h-4 w-4" /> View Activity
-                          </DropdownMenuItem>
-                          {user.role !== 'ADMIN' && (
-                            <>
-                              <DropdownMenuSeparator className="my-1 opacity-50" />
-                              <DropdownMenuItem 
-                                className={`cursor-pointer rounded-lg py-2 ${user.isBlocked ? 'text-green-600' : 'text-destructive'}`}
-                                onSelect={() => toggleBlock(user.id, user.isBlocked)}
-                              >
-                                {user.isBlocked ? (
-                                  <><CheckCircle2 className="mr-2 h-4 w-4" /> Unblock User</>
-                                ) : (
-                                  <><Ban className="mr-2 h-4 w-4" /> Block User</>
-                                )}
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-              {!isLoading && filteredUsers.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-medium">
-                    No users found matching your search.
-                  </TableCell>
-                </TableRow>
+                      </TableCell>
+                      <TableCell>
+                        {user.isBlocked ? (
+                          <Badge variant="destructive" className="flex w-fit items-center gap-1.5 font-bold px-3 py-1 rounded-lg">
+                            <Ban className="h-3 w-3" /> Blocked
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-green-500 hover:bg-green-600 flex w-fit items-center gap-1.5 font-bold px-3 py-1 rounded-lg text-white border-none">
+                            <CheckCircle2 className="h-3 w-3" /> Active
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm font-medium text-muted-foreground">{user.college || '—'}</span>
+                      </TableCell>
+                      <TableCell className="text-right px-6">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="hover:bg-accent rounded-lg">
+                              <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="rounded-xl p-2 shadow-xl border-border/50 min-w-[160px]">
+                            <DropdownMenuItem 
+                              className="cursor-pointer rounded-lg py-2"
+                              onSelect={() => handleViewActivity(user)}
+                            >
+                              <History className="mr-2 h-4 w-4" /> View Activity
+                            </DropdownMenuItem>
+                            {user.role !== 'ADMIN' && (
+                              <>
+                                <DropdownMenuSeparator className="my-1 opacity-50" />
+                                <DropdownMenuItem 
+                                  className={`cursor-pointer rounded-lg py-2 ${user.isBlocked ? 'text-green-600' : 'text-destructive'}`}
+                                  onSelect={() => toggleBlock(user.id, user.isBlocked)}
+                                >
+                                  {user.isBlocked ? (
+                                    <><CheckCircle2 className="mr-2 h-4 w-4" /> Unblock User</>
+                                  ) : (
+                                    <><Ban className="mr-2 h-4 w-4" /> Block User</>
+                                  )}
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {!isLoading && filteredUsers.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-64 text-center">
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center">
+                            <Search className="h-8 w-8 text-muted-foreground/30" />
+                          </div>
+                          <p className="text-muted-foreground font-bold text-xl">Found nothing</p>
+                          <p className="text-muted-foreground/60 text-sm max-w-xs mx-auto">
+                            No users match your search term "{searchTerm}". Try checking for typos or using different keywords.
+                          </p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
               )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
 
-      {/* View Activity Dialog */}
       <Dialog open={isActivityDialogOpen} onOpenChange={setIsActivityDialogOpen}>
         <DialogContent className="sm:max-w-[425px] rounded-2xl">
           <DialogHeader>

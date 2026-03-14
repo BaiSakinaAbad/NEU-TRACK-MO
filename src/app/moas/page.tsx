@@ -8,7 +8,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore, ChevronDown } from 'lucide-react';
+import { Plus, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore, ChevronDown, Search } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useSearchParams } from 'next/navigation';
 import { softDeleteMOA, recoverMOA, createMOA, updateMOA } from '@/lib/moa-service';
@@ -57,7 +57,6 @@ export default function MOAListPage() {
     endorsedByCollege: '',
   });
 
-  // Stabilized query to prevent render loops
   const moasQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(
@@ -119,7 +118,6 @@ export default function MOAListPage() {
     });
   }, []);
 
-  // DECOUPLING FIX: Use setTimeout to ensure Dropdown closes before Dialog opens
   const handleAction = useCallback((action: 'view' | 'edit', moa: MOA) => {
     setTimeout(() => {
       setSelectedMOA(moa);
@@ -233,57 +231,76 @@ export default function MOAListPage() {
                     <TableCell className="text-right px-6"><Skeleton className="h-8 w-8 rounded-lg ml-auto" /></TableCell>
                   </TableRow>
                 ))
-              ) : filteredMOAs.map((moa) => (
-                <TableRow key={moa.id} className="hover:bg-accent/10 transition-colors border-b border-border/30">
-                  <TableCell className="px-6 py-5">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-foreground">{moa.companyName}</span>
-                      <span className="text-xs text-muted-foreground truncate max-w-[200px]">{moa.companyAddress}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground font-medium">{moa.industryType}</TableCell>
-                  <TableCell>{getStatusBadge(moa.status)}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="font-bold text-muted-foreground border-border/60">{moa.endorsedByCollege}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right px-6">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="hover:bg-accent rounded-lg">
-                          <MoreVertical className="h-5 w-5 text-muted-foreground" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="rounded-xl p-2 shadow-xl min-w-[160px]">
-                        <DropdownMenuItem onSelect={() => handleAction('view', moa)}>
-                          <Eye className="mr-2 h-4 w-4" /> View Details
-                        </DropdownMenuItem>
-                        {isFacultyOrAdmin && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onSelect={() => handleAction('edit', moa)}>
-                              <Edit2 className="mr-2 h-4 w-4" /> Edit
+              ) : (
+                <>
+                  {filteredMOAs.map((moa) => (
+                    <TableRow key={moa.id} className="hover:bg-accent/10 transition-colors border-b border-border/30">
+                      <TableCell className="px-6 py-5">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-foreground">{moa.companyName}</span>
+                          <span className="text-xs text-muted-foreground truncate max-w-[200px]">{moa.companyAddress}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground font-medium">{moa.industryType}</TableCell>
+                      <TableCell>{getStatusBadge(moa.status)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-bold text-muted-foreground border-border/60">{moa.endorsedByCollege}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right px-6">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="hover:bg-accent rounded-lg">
+                              <MoreVertical className="h-5 w-5 text-muted-foreground" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="rounded-xl p-2 shadow-xl min-w-[160px]">
+                            <DropdownMenuItem onSelect={() => handleAction('view', moa)}>
+                              <Eye className="mr-2 h-4 w-4" /> View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              className={moa.isDeleted ? 'text-green-600' : 'text-destructive'}
-                              onSelect={() => {
-                                if (moa.isDeleted) recoverMOA(firestore, user!, moa);
-                                else softDeleteMOA(firestore, user!, moa);
-                                toast({ title: "Updated", description: "Record status changed." });
-                              }}
-                            >
-                              {moa.isDeleted ? <ArchiveRestore className="mr-2 h-4 w-4" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                              {moa.isDeleted ? 'Recover' : 'Move to Bin'}
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
+                            {isFacultyOrAdmin && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onSelect={() => handleAction('edit', moa)}>
+                                  <Edit2 className="mr-2 h-4 w-4" /> Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className={moa.isDeleted ? 'text-green-600' : 'text-destructive'}
+                                  onSelect={() => {
+                                    if (moa.isDeleted) recoverMOA(firestore, user!, moa);
+                                    else softDeleteMOA(firestore, user!, moa);
+                                    toast({ title: "Updated", description: "Record status changed." });
+                                  }}
+                                >
+                                  {moa.isDeleted ? <ArchiveRestore className="mr-2 h-4 w-4" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                  {moa.isDeleted ? 'Recover' : 'Move to Bin'}
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {!isDataLoading && filteredMOAs.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-64 text-center">
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center">
+                            <Search className="h-8 w-8 text-muted-foreground/30" />
+                          </div>
+                          <p className="text-muted-foreground font-bold text-xl">Found nothing</p>
+                          <p className="text-muted-foreground/60 text-sm max-w-xs mx-auto">
+                            No agreements match your search term "{searchTerm}". Try checking for typos or using broader keywords.
+                          </p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
+              )}
             </TableBody>
           </Table>
-          {hasMore && (
+          {hasMore && filteredMOAs.length > 0 && (
             <div className="p-4 flex justify-center bg-muted/5 border-t">
               <Button variant="ghost" onClick={() => setDisplayLimit(d => d + INITIAL_BATCH)} className="gap-2">
                 <ChevronDown className="h-4 w-4" /> Load More
@@ -293,7 +310,6 @@ export default function MOAListPage() {
         </CardContent>
       </Card>
 
-      {/* VIEW DIALOG */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-2xl rounded-2xl">
           <DialogHeader>
@@ -311,7 +327,6 @@ export default function MOAListPage() {
         </DialogContent>
       </Dialog>
 
-      {/* EDIT DIALOG */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
           <DialogHeader>

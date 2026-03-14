@@ -39,13 +39,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync internal search state with URL search params when navigation happens
   useEffect(() => {
     const currentSearch = searchParams.get('search') || '';
     if (currentSearch !== searchValue) {
       setSearchValue(currentSearch);
     }
-  }, [searchParams, pathname]);
+  }, [searchParams]);
 
   if (!user) return <>{children}</>;
 
@@ -61,11 +60,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
     const newQuery = params.toString() ? `?${params.toString()}` : '';
     
-    // If we are on a searchable page, replace URL to update parameters
     if (pathname === '/moas' || pathname === '/admin/users') {
       router.replace(`${pathname}${newQuery}`);
     } else {
-      // If we are on dashboard or other, push to MOA list with search
       router.push(`/moas${newQuery}`);
     }
   };
@@ -86,11 +83,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen w-full bg-[#fcfdfe] font-body flex flex-col">
-      {/* Top Navbar */}
       <header className="sticky top-0 z-50 h-16 w-full border-b border-border/40 bg-white/80 backdrop-blur-xl px-4 sm:px-8 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
         <div className="mx-auto flex h-full items-center justify-between max-w-screen-2xl">
           
-          {/* Left Side: Brand & Mobile Menu */}
           <div className="flex items-center gap-4">
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
@@ -131,7 +126,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <span className="font-bold text-lg text-primary tracking-tight hidden sm:inline-block">Track Mo</span>
             </Link>
 
-            {/* Desktop Navigation Links */}
             <nav className="hidden md:flex items-center ml-8 gap-1">
               {filteredMenu.map((item) => (
                 <Link
@@ -150,7 +144,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </nav>
           </div>
 
-          {/* Right Side: Search & User Profile */}
           <div className="flex items-center gap-4">
             {showSearch && (
               <div className="relative hidden lg:flex items-center h-10 w-64 px-3 bg-muted/30 rounded-xl border border-border/40 focus-within:border-primary/30 focus-within:bg-white transition-all">
@@ -203,7 +196,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex-1 w-full mx-auto max-w-screen-2xl p-4 sm:p-8">
         {children}
       </main>
