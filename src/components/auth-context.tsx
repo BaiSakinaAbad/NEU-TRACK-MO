@@ -46,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
 
       if (firebaseUser) {
+        // Domain validation
         if (!firebaseUser.email?.endsWith('@neu.edu.ph')) {
           await signOut(auth);
           setUser(null);
@@ -63,31 +64,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (userData.isBlocked) {
               await signOut(auth);
               setUser(null);
-              setError('Your account has been blocked.');
+              setError('Your account has been blocked. Please contact an administrator.');
             } else {
               setUser({ ...userData, id: firebaseUser.uid });
             }
           } else {
+            // Auto-provision new user as STUDENT
             const newUser: User = {
               id: firebaseUser.uid,
               email: firebaseUser.email || '',
               name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'New User',
               role: 'STUDENT',
               isBlocked: false,
+              lastLogin: new Date().toISOString(),
             };
             
-            setDoc(userDocRef, newUser)
-              .then(() => setUser(newUser))
-              .catch(async (err) => {
-                const permissionError = new FirestorePermissionError({
-                  path: userDocRef.path,
-                  operation: 'create',
-                  requestResourceData: newUser,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-              });
+            await setDoc(userDocRef, newUser);
+            setUser(newUser);
           }
         } catch (err: any) {
+          console.error("Auth initialization error:", err);
           if (err.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
               path: `/users/${firebaseUser.uid}`,
@@ -95,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
             errorEmitter.emit('permission-error', permissionError);
           }
+          setError('An error occurred while initializing your profile.');
           setUser(null);
         }
       } else {
@@ -113,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error: any) {
       let message = 'Invalid email or password.';
       if (error.code === 'auth/configuration-not-found') {
-        message = "Email/Password sign-in is not enabled in Firebase Console.";
+        message = "Email/Password sign-in is not enabled in the Firebase Console.";
       }
       return { success: false, message };
     }
@@ -121,11 +118,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ hd: 'neu.edu.ph' });
+    provider.setCustomParameters({ 
+      hd: 'neu.edu.ph',
+      prompt: 'select_account' 
+    });
     try {
+      setError(null);
       await signInWithPopup(auth, provider);
     } catch (error: any) {
-      setError(error.message);
+      console.error("Google login error:", error);
+      if (error.code === 'auth/popup-closed-by-user') {
+        setError('Login cancelled. Please try again.');
+      } else {
+        setError(error.message);
+      }
     }
   };
 
