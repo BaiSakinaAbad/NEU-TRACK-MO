@@ -8,7 +8,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore, ChevronDown, Search } from 'lucide-react';
+import { Plus, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore, ChevronDown, Search, Calendar, Mail, User as UserIcon, Building2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useSearchParams } from 'next/navigation';
 import { softDeleteMOA, recoverMOA, createMOA, updateMOA } from '@/lib/moa-service';
@@ -27,6 +27,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 const INITIAL_BATCH = 25;
 
@@ -97,7 +98,8 @@ export default function MOAListPage() {
       list = list.filter(m => 
         m.companyName.toLowerCase().includes(term) ||
         m.endorsedByCollege.toLowerCase().includes(term) ||
-        m.industryType.toLowerCase().includes(term)
+        m.industryType.toLowerCase().includes(term) ||
+        m.hteId?.toLowerCase().includes(term)
       );
     }
     return list;
@@ -164,10 +166,10 @@ export default function MOAListPage() {
                 <Plus className="mr-2 h-5 w-5" /> Add New MOA
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold text-primary">New Agreement Record</DialogTitle>
-                <DialogDescription>Enter the details of the partnership.</DialogDescription>
+                <DialogDescription>Enter the comprehensive details of the partnership.</DialogDescription>
               </DialogHeader>
               <form 
                 onSubmit={(e) => {
@@ -180,7 +182,7 @@ export default function MOAListPage() {
               >
                 <MOAFormFields formData={formData} setFormData={setFormData} />
                 <DialogFooter>
-                  <Button type="submit" className="w-full h-12 bg-primary font-bold rounded-xl">Register Agreement</Button>
+                  <Button type="submit" className="w-full h-12 bg-primary font-bold rounded-xl shadow-lg shadow-primary/20">Register Agreement</Button>
                 </DialogFooter>
               </form>
             </DialogContent>
@@ -200,7 +202,10 @@ export default function MOAListPage() {
                     variant={activeTab === tab ? 'secondary' : 'ghost'} 
                     size="sm" 
                     onClick={() => setActiveTab(tab as any)}
-                    className={`text-xs h-9 px-4 rounded-lg transition-all ${activeTab === tab ? 'shadow-sm font-bold' : ''}`}
+                    className={cn(
+                      "text-xs h-9 px-4 rounded-lg transition-all",
+                      activeTab === tab ? "bg-white shadow-sm font-bold text-primary" : "text-muted-foreground"
+                    )}
                   >
                     {tab.charAt(0) + tab.slice(1).toLowerCase()}
                   </Button>
@@ -213,7 +218,7 @@ export default function MOAListPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30 border-b border-border/50">
-                <TableHead className="font-bold text-primary py-5 px-6">Company</TableHead>
+                <TableHead className="font-bold text-primary py-5 px-6">HTE ID / Company</TableHead>
                 <TableHead className="font-bold text-primary py-5">Industry</TableHead>
                 <TableHead className="font-bold text-primary py-5">Status</TableHead>
                 <TableHead className="font-bold text-primary py-5">College</TableHead>
@@ -224,7 +229,12 @@ export default function MOAListPage() {
               {isDataLoading ? (
                 [1,2,3].map(i => (
                   <TableRow key={i}>
-                    <TableCell className="px-6 py-5"><Skeleton className="h-4 w-32" /></TableCell>
+                    <TableCell className="px-6 py-5">
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                    </TableCell>
                     <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-20 rounded-lg" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-16" /></TableCell>
@@ -237,6 +247,7 @@ export default function MOAListPage() {
                     <TableRow key={moa.id} className="hover:bg-accent/10 transition-colors border-b border-border/30">
                       <TableCell className="px-6 py-5">
                         <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-primary/60 uppercase tracking-tighter">{moa.hteId || 'NO ID'}</span>
                           <span className="font-bold text-foreground">{moa.companyName}</span>
                           <span className="text-xs text-muted-foreground truncate max-w-[200px]">{moa.companyAddress}</span>
                         </div>
@@ -290,7 +301,7 @@ export default function MOAListPage() {
                           </div>
                           <p className="text-muted-foreground font-bold text-xl">Found nothing</p>
                           <p className="text-muted-foreground/60 text-sm max-w-xs mx-auto">
-                            No agreements match your search term "{searchTerm}". Try checking for typos or using broader keywords.
+                            No agreements match your search term "{searchTerm}".
                           </p>
                         </div>
                       </TableCell>
@@ -302,7 +313,7 @@ export default function MOAListPage() {
           </Table>
           {hasMore && filteredMOAs.length > 0 && (
             <div className="p-4 flex justify-center bg-muted/5 border-t">
-              <Button variant="ghost" onClick={() => setDisplayLimit(d => d + INITIAL_BATCH)} className="gap-2">
+              <Button variant="ghost" onClick={() => setDisplayLimit(d => d + INITIAL_BATCH)} className="gap-2 font-bold text-primary">
                 <ChevronDown className="h-4 w-4" /> Load More
               </Button>
             </div>
@@ -311,24 +322,38 @@ export default function MOAListPage() {
       </Card>
 
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-2xl rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-primary">Agreement Details</DialogTitle>
-          </DialogHeader>
-          {selectedMOA && (
-            <div className="grid grid-cols-2 gap-4 py-4">
-              <DetailItem label="Company Name" value={selectedMOA.companyName} fullWidth />
-              <DetailItem label="Industry" value={selectedMOA.industryType} />
-              <DetailItem label="College" value={selectedMOA.endorsedByCollege} />
-              <DetailItem label="Status" value={MOA_STATUS_LABELS[selectedMOA.status]} fullWidth />
-              <DetailItem label="Address" value={selectedMOA.companyAddress} fullWidth />
+        <DialogContent className="max-w-3xl rounded-2xl overflow-hidden p-0">
+          <div className="bg-primary p-6 text-white">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest opacity-70">HTE ID: {selectedMOA?.hteId || 'N/A'}</p>
+                <DialogTitle className="text-2xl font-bold mt-1">{selectedMOA?.companyName}</DialogTitle>
+                <div className="flex items-center gap-2 mt-2 opacity-90">
+                  <Building2 className="h-3 w-3" />
+                  <span className="text-xs font-medium">{selectedMOA?.industryType} Industry</span>
+                </div>
+              </div>
+              <div className="bg-white/10 p-3 rounded-xl backdrop-blur-md">
+                {selectedMOA && getStatusBadge(selectedMOA.status)}
+              </div>
             </div>
-          )}
+          </div>
+          <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <DetailItem label="Address of the Company" value={selectedMOA?.companyAddress} icon={Building2} fullWidth />
+            <DetailItem label="Contact Person" value={selectedMOA?.contactPerson} icon={UserIcon} />
+            <DetailItem label="Contact Email" value={selectedMOA?.contactEmail} icon={Mail} />
+            <DetailItem label="Effective Date" value={selectedMOA?.effectiveDate ? new Date(selectedMOA.effectiveDate).toLocaleDateString() : '—'} icon={Calendar} />
+            <DetailItem label="Expiry Date" value={selectedMOA?.expiryDate ? new Date(selectedMOA.expiryDate).toLocaleDateString() : '—'} icon={Calendar} />
+            <DetailItem label="Endorsed by College" value={selectedMOA?.endorsedByCollege} fullWidth />
+          </div>
+          <DialogFooter className="bg-muted/30 p-4 border-t">
+            <Button variant="ghost" onClick={() => setIsViewDialogOpen(false)} className="rounded-xl font-bold">Close Details</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-primary">Edit Agreement</DialogTitle>
           </DialogHeader>
@@ -343,7 +368,7 @@ export default function MOAListPage() {
           >
             <MOAFormFields formData={formData} setFormData={setFormData} />
             <DialogFooter>
-              <Button type="submit" className="w-full h-12 bg-primary font-bold rounded-xl">Save Changes</Button>
+              <Button type="submit" className="w-full h-12 bg-primary font-bold rounded-xl shadow-lg shadow-primary/20">Save Changes</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -352,11 +377,14 @@ export default function MOAListPage() {
   );
 }
 
-function DetailItem({ label, value, fullWidth = false }: { label: string, value: string | undefined, fullWidth?: boolean }) {
+function DetailItem({ label, value, icon: Icon, fullWidth = false }: { label: string, value: string | undefined, icon?: any, fullWidth?: boolean }) {
   return (
-    <div className={`space-y-1 ${fullWidth ? 'col-span-2' : ''}`}>
-      <Label className="text-[10px] font-bold uppercase text-muted-foreground">{label}</Label>
-      <div className="text-sm font-semibold p-3 bg-muted/20 rounded-lg border border-border/40">
+    <div className={cn("space-y-1.5", fullWidth ? 'col-span-1 md:col-span-2' : '')}>
+      <Label className="text-[10px] font-bold uppercase text-muted-foreground/70 flex items-center gap-1.5">
+        {Icon && <Icon className="h-3 w-3" />}
+        {label}
+      </Label>
+      <div className="text-sm font-semibold p-4 bg-muted/20 rounded-xl border border-border/40 text-foreground min-h-[44px]">
         {value || '—'}
       </div>
     </div>
@@ -365,51 +393,112 @@ function DetailItem({ label, value, fullWidth = false }: { label: string, value:
 
 function MOAFormFields({ formData, setFormData }: { formData: any, setFormData: any }) {
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <div className="space-y-2 col-span-2">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-2 col-span-1">
+        <Label className="text-xs font-bold uppercase text-muted-foreground">HTE ID</Label>
+        <Input 
+          placeholder="e.g. HTE-2024-XXX"
+          className="h-12 bg-muted/30 border-none rounded-xl focus-visible:ring-primary/20"
+          value={formData.hteId}
+          onChange={(e) => setFormData({...formData, hteId: e.target.value})}
+        />
+      </div>
+      <div className="space-y-2 col-span-1">
         <Label className="text-xs font-bold uppercase text-muted-foreground">Company Name</Label>
         <Input 
-          className="h-12 bg-muted/30 border-none"
+          placeholder="Official Business Name"
+          className="h-12 bg-muted/30 border-none rounded-xl focus-visible:ring-primary/20"
           value={formData.companyName}
           onChange={(e) => setFormData({...formData, companyName: e.target.value})}
           required 
         />
       </div>
-      <div className="space-y-2 col-span-2">
-        <Label className="text-xs font-bold uppercase text-muted-foreground">Company Address</Label>
+      <div className="space-y-2 col-span-1 md:col-span-2">
+        <Label className="text-xs font-bold uppercase text-muted-foreground">Address of the Company</Label>
         <Input 
-          className="h-12 bg-muted/30 border-none"
+          placeholder="Full Business Address"
+          className="h-12 bg-muted/30 border-none rounded-xl focus-visible:ring-primary/20"
           value={formData.companyAddress}
           onChange={(e) => setFormData({...formData, companyAddress: e.target.value})}
+          required
         />
       </div>
       <div className="space-y-2">
-        <Label className="text-xs font-bold uppercase text-muted-foreground">Industry</Label>
+        <Label className="text-xs font-bold uppercase text-muted-foreground">Contact Person</Label>
         <Input 
-          className="h-12 bg-muted/30 border-none"
-          value={formData.industryType}
-          onChange={(e) => setFormData({...formData, industryType: e.target.value})}
+          placeholder="Authorized Representative"
+          className="h-12 bg-muted/30 border-none rounded-xl focus-visible:ring-primary/20"
+          value={formData.contactPerson}
+          onChange={(e) => setFormData({...formData, contactPerson: e.target.value})}
+          required
         />
       </div>
       <div className="space-y-2">
-        <Label className="text-xs font-bold uppercase text-muted-foreground">College</Label>
+        <Label className="text-xs font-bold uppercase text-muted-foreground">Email of Contact Person</Label>
         <Input 
-          className="h-12 bg-muted/30 border-none"
+          type="email"
+          placeholder="representative@company.com"
+          className="h-12 bg-muted/30 border-none rounded-xl focus-visible:ring-primary/20"
+          value={formData.contactEmail}
+          onChange={(e) => setFormData({...formData, contactEmail: e.target.value})}
+          required
+        />
+      </div>
+      <div className="space-y-2">
+        <Label className="text-xs font-bold uppercase text-muted-foreground">Type of Industry</Label>
+        <Select 
+          value={formData.industryType} 
+          onValueChange={(v) => setFormData({...formData, industryType: v})}
+        >
+          <SelectTrigger className="h-12 bg-muted/30 border-none rounded-xl">
+            <SelectValue placeholder="Select Industry" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            {['Technology', 'Telecom', 'Food', 'Services', 'Finance', 'Manufacturing', 'Education', 'Healthcare'].map(type => (
+              <SelectItem key={type} value={type}>{type}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label className="text-xs font-bold uppercase text-muted-foreground">Endorsed by College</Label>
+        <Input 
+          placeholder="e.g. CCS, CBA, CEA"
+          className="h-12 bg-muted/30 border-none rounded-xl focus-visible:ring-primary/20"
           value={formData.endorsedByCollege}
           onChange={(e) => setFormData({...formData, endorsedByCollege: e.target.value})}
           required
         />
       </div>
-      <div className="space-y-2 col-span-2">
-        <Label className="text-xs font-bold uppercase text-muted-foreground">Status</Label>
+      <div className="space-y-2">
+        <Label className="text-xs font-bold uppercase text-muted-foreground">Effective Date of MOA</Label>
+        <Input 
+          type="date"
+          className="h-12 bg-muted/30 border-none rounded-xl focus-visible:ring-primary/20"
+          value={formData.effectiveDate}
+          onChange={(e) => setFormData({...formData, effectiveDate: e.target.value})}
+          required
+        />
+      </div>
+      <div className="space-y-2">
+        <Label className="text-xs font-bold uppercase text-muted-foreground">Expiry Date</Label>
+        <Input 
+          type="date"
+          className="h-12 bg-muted/30 border-none rounded-xl focus-visible:ring-primary/20"
+          value={formData.expiryDate}
+          onChange={(e) => setFormData({...formData, expiryDate: e.target.value})}
+        />
+      </div>
+      <div className="space-y-2 col-span-1 md:col-span-2">
+        <Label className="text-xs font-bold uppercase text-muted-foreground">Status of MOA</Label>
         <Select 
           value={formData.status} 
           onValueChange={(v: MOAStatus) => setFormData({...formData, status: v})}
         >
-          <SelectTrigger className="h-12 bg-muted/30 border-none">
+          <SelectTrigger className="h-12 bg-muted/30 border-none rounded-xl">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="rounded-xl">
             {Object.entries(MOA_STATUS_LABELS).map(([val, label]) => (
               <SelectItem key={val} value={val}>{label}</SelectItem>
             ))}
