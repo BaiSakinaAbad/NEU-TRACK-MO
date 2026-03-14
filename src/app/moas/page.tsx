@@ -322,23 +322,23 @@ export default function MOAListPage() {
       </Card>
 
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-3xl rounded-2xl overflow-hidden p-0">
-          <div className="bg-primary p-6 text-white">
-            <div className="flex justify-between items-start">
+        <DialogContent className="max-w-2xl rounded-2xl overflow-hidden p-0">
+          <div className="bg-primary px-5 py-4 text-white">
+            <div className="flex justify-between items-center">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest opacity-70">HTE ID: {selectedMOA?.hteId || 'N/A'}</p>
-                <DialogTitle className="text-2xl font-bold mt-1">{selectedMOA?.companyName}</DialogTitle>
-                <div className="flex items-center gap-2 mt-2 opacity-90">
+                <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">HTE ID: {selectedMOA?.hteId || 'N/A'}</p>
+                <DialogTitle className="text-xl font-bold mt-0.5">{selectedMOA?.companyName}</DialogTitle>
+                <div className="flex items-center gap-2 mt-1 opacity-90">
                   <Building2 className="h-3 w-3" />
-                  <span className="text-xs font-medium">{selectedMOA?.industryType} Industry</span>
+                  <span className="text-[11px] font-medium">{selectedMOA?.industryType} Industry</span>
                 </div>
               </div>
-              <div className="bg-white/10 p-3 rounded-xl backdrop-blur-md">
+              <div className="bg-white/10 p-2 rounded-lg backdrop-blur-md">
                 {selectedMOA && getStatusBadge(selectedMOA.status)}
               </div>
             </div>
           </div>
-          <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
             <DetailItem label="Address of the Company" value={selectedMOA?.companyAddress} icon={Building2} fullWidth />
             <DetailItem label="Contact Person" value={selectedMOA?.contactPerson} icon={UserIcon} />
             <DetailItem label="Contact Email" value={selectedMOA?.contactEmail} icon={Mail} />
@@ -346,8 +346,8 @@ export default function MOAListPage() {
             <DetailItem label="Expiry Date" value={selectedMOA?.expiryDate ? new Date(selectedMOA.expiryDate).toLocaleDateString() : '—'} icon={Calendar} />
             <DetailItem label="Endorsed by College" value={selectedMOA?.endorsedByCollege} fullWidth />
           </div>
-          <DialogFooter className="bg-muted/30 p-4 border-t">
-            <Button variant="ghost" onClick={() => setIsViewDialogOpen(false)} className="rounded-xl font-bold">Close Details</Button>
+          <DialogFooter className="bg-muted/30 px-5 py-3 border-t">
+            <Button variant="ghost" onClick={() => setIsViewDialogOpen(false)} className="rounded-xl font-bold h-9">Close Details</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -379,12 +379,12 @@ export default function MOAListPage() {
 
 function DetailItem({ label, value, icon: Icon, fullWidth = false }: { label: string, value: string | undefined, icon?: any, fullWidth?: boolean }) {
   return (
-    <div className={cn("space-y-1.5", fullWidth ? 'col-span-1 md:col-span-2' : '')}>
-      <Label className="text-[10px] font-bold uppercase text-muted-foreground/70 flex items-center gap-1.5">
-        {Icon && <Icon className="h-3 w-3" />}
+    <div className={cn("space-y-1", fullWidth ? 'col-span-1 md:col-span-2' : '')}>
+      <Label className="text-[9px] font-bold uppercase text-muted-foreground/80 flex items-center gap-1.5">
+        {Icon && <Icon className="h-2.5 w-2.5" />}
         {label}
       </Label>
-      <div className="text-sm font-semibold p-4 bg-muted/20 rounded-xl border border-border/40 text-foreground min-h-[44px]">
+      <div className="text-xs font-semibold px-3 py-2 bg-muted/20 rounded-lg border border-border/40 text-foreground min-h-[36px] flex items-center">
         {value || '—'}
       </div>
     </div>
