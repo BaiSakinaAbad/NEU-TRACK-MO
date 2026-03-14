@@ -129,7 +129,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Google login error:", error);
       let message = error.message;
       
-      if (error.code === 'auth/popup-closed-by-user') {
+      if (error.code === 'auth/popup-blocked') {
+        message = 'The login popup was blocked by your browser. Please allow popups for this site and try again.';
+      } else if (error.code === 'auth/popup-closed-by-user') {
         message = 'Login cancelled. Please try again.';
       } else if (error.code === 'auth/operation-not-allowed') {
         message = 'Google Sign-in is not enabled in the Firebase Console (Authentication > Sign-in method).';
