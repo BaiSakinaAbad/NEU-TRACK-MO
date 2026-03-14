@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, History, Ban, CheckCircle2, Clock, Hash, Search } from 'lucide-react';
+import { MoreHorizontal, History, Ban, CheckCircle2, Clock, Hash, Search, ArrowUpDown } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -106,7 +106,12 @@ export default function UserManagementPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30 border-b border-border/50 hover:bg-muted/30">
-                <TableHead className="font-bold text-primary py-5 px-6">User</TableHead>
+                <TableHead className="font-bold text-primary py-5 px-6">
+                  <div className="flex items-center gap-2">Name <ArrowUpDown className="h-3 w-3 opacity-30" /></div>
+                </TableHead>
+                <TableHead className="font-bold text-primary py-5">
+                  <div className="flex items-center gap-2">Email <ArrowUpDown className="h-3 w-3 opacity-30" /></div>
+                </TableHead>
                 <TableHead className="font-bold text-primary py-5">Role</TableHead>
                 <TableHead className="font-bold text-primary py-5">Status</TableHead>
                 <TableHead className="font-bold text-primary py-5">College</TableHead>
@@ -120,12 +125,10 @@ export default function UserManagementPage() {
                     <TableCell className="px-6 py-5">
                       <div className="flex items-center gap-4">
                         <Skeleton className="h-11 w-11 rounded-full" />
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-[120px]" />
-                          <Skeleton className="h-3 w-[150px]" />
-                        </div>
+                        <Skeleton className="h-4 w-[120px]" />
                       </div>
                     </TableCell>
+                    <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-[80px] rounded-lg" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-[80px] rounded-lg" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
@@ -138,16 +141,18 @@ export default function UserManagementPage() {
                     <TableRow key={user.id} className="hover:bg-accent/10 transition-colors border-b border-border/30">
                       <TableCell className="px-6 py-5">
                         <div className="flex items-center gap-4">
-                          <Avatar className="h-11 w-11 shadow-sm border border-border/50">
-                            <AvatarFallback className="bg-primary/5 text-primary font-bold text-base">
+                          <Avatar className="h-10 w-10 shadow-sm border border-border/50">
+                            <AvatarFallback className="bg-primary/5 text-primary font-bold text-sm">
                               {user.name.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="flex flex-col">
-                            <span className="font-bold text-foreground">{user.name}</span>
-                            <span className="text-xs text-muted-foreground">{user.email}</span>
-                          </div>
+                          <span className="font-bold text-foreground hover:text-primary transition-colors cursor-pointer">
+                            {user.name}
+                          </span>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm font-medium text-muted-foreground">{user.email}</span>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={`${getRoleColor(user.role)} font-bold px-3 py-1 rounded-lg`}>
@@ -204,15 +209,32 @@ export default function UserManagementPage() {
                   ))}
                   {!isLoading && filteredUsers.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="h-64 text-center">
-                        <div className="flex flex-col items-center justify-center gap-3">
-                          <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center">
-                            <Search className="h-8 w-8 text-muted-foreground/30" />
+                      <TableCell colSpan={6} className="h-72 text-center">
+                        <div className="flex flex-col items-center justify-center gap-4 py-12">
+                          <div className="w-20 h-20 bg-muted/40 rounded-full flex items-center justify-center border-2 border-dashed border-border/50">
+                            <Search className="h-10 w-10 text-muted-foreground/40" />
                           </div>
-                          <p className="text-muted-foreground font-bold text-xl">Found nothing</p>
-                          <p className="text-muted-foreground/60 text-sm max-w-xs mx-auto">
-                            No users match your search term "{searchTerm}". Try checking for typos or using different keywords.
-                          </p>
+                          <div className="space-y-1">
+                            <p className="text-muted-foreground font-bold text-2xl tracking-tight">Found nothing</p>
+                            <p className="text-muted-foreground/60 text-sm max-w-[300px] mx-auto">
+                              No users match your search term "{searchTerm}". <br/>Try checking for typos or using different keywords.
+                            </p>
+                          </div>
+                          {searchTerm && (
+                            <Button 
+                              variant="outline" 
+                              onClick={() => {
+                                // Clear search by pushing empty search param
+                                const url = new URL(window.location.href);
+                                url.searchParams.delete('search');
+                                window.history.pushState({}, '', url.toString());
+                                window.dispatchEvent(new PopStateEvent('popstate'));
+                              }}
+                              className="rounded-xl mt-2 font-bold"
+                            >
+                              Clear filters
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

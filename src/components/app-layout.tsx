@@ -60,6 +60,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
     const newQuery = params.toString() ? `?${params.toString()}` : '';
     
+    // Use replace for snappy "type-to-filter" feel
     if (pathname === '/moas' || pathname === '/admin/users') {
       router.replace(`${pathname}${newQuery}`);
     } else {
@@ -146,16 +147,24 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center gap-4">
             {showSearch && (
-              <div className="relative hidden lg:flex items-center h-10 w-64 px-3 bg-muted/30 rounded-xl border border-border/40 focus-within:border-primary/30 focus-within:bg-white transition-all">
-                <Search className="h-4 w-4 text-muted-foreground/60 mr-2" />
+              <div className="relative hidden lg:flex items-center h-11 w-80 px-4 bg-muted/30 rounded-xl border border-border/40 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50 focus-within:bg-white transition-all">
+                <Search className="h-5 w-5 text-muted-foreground/60 mr-3" />
                 <input 
                   ref={searchInputRef}
                   type="text" 
                   placeholder={searchPlaceholder}
-                  className="bg-transparent border-none focus:ring-0 w-full outline-none text-xs font-medium placeholder:text-muted-foreground/50"
+                  className="bg-transparent border-none focus:ring-0 w-full outline-none text-sm font-medium placeholder:text-muted-foreground/50"
                   value={searchValue}
                   onChange={(e) => handleSearch(e.target.value)}
                 />
+                {searchValue && (
+                  <button 
+                    onClick={() => handleSearch('')}
+                    className="ml-2 p-1 hover:bg-muted/50 rounded-full text-muted-foreground/60 hover:text-foreground transition-all"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             )}
 
