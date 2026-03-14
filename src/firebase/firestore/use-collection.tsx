@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -13,16 +12,15 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
 /**
- * A robust hook for real-time Firestore collections.
- * Includes protection against infinite loops and better error reporting.
+ * Robust hook for real-time Firestore collections.
+ * Optimized to prevent UI flicker and redundant state updates.
  */
 export function useCollection<T = DocumentData>(query: Query<T> | null) {
   const [data, setData] = useState<T[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!!query);
   const [error, setError] = useState<Error | null>(null);
   
-  // Track the current query to avoid redundant loading states
-  const lastQueryRef = useRef<string | null>(null);
+  const queryRef = useRef<string>('');
 
   useEffect(() => {
     if (!query) {
@@ -31,12 +29,11 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
       return;
     }
 
-    // Determine if this is a genuinely new query path/definition
-    const queryKey = (query as any)._query?.path?.segments?.join('/') || 'query';
-    
-    if (lastQueryRef.current !== queryKey) {
+    // Identify the query to avoid resetting loading unnecessarily
+    const currentQueryKey = JSON.stringify((query as any)._query || {});
+    if (queryRef.current !== currentQueryKey) {
       setIsLoading(true);
-      lastQueryRef.current = queryKey;
+      queryRef.current = currentQueryKey;
     }
 
     const unsubscribe = onSnapshot(
@@ -52,17 +49,12 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
       },
       async (err) => {
         if (err.code === 'permission-denied') {
-          const path = (query as any)._query?.path?.segments?.join('/') || (query as any).path || 'unknown collection';
+          const path = (query as any)._query?.path?.segments?.join('/') || 'collection';
           const permissionError = new FirestorePermissionError({
-            path: path,
+            path,
             operation: 'list',
           });
           errorEmitter.emit('permission-error', permissionError);
-        } else if (err.code === 'failed-precondition') {
-          // This usually means a missing index!
-          console.error("Firestore Index Required: ", err.message);
-          // We don't throw here to avoid crashing the whole app, 
-          // but we surface it in the console with the link to create the index.
         }
         setError(err);
         setIsLoading(false);
