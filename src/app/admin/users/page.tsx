@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useCallback } from 'react';
@@ -9,10 +8,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { UserPlus, MoreHorizontal, History, Ban, CheckCircle2, Clock, Hash } from 'lucide-react';
+import { MoreHorizontal, History, Ban, CheckCircle2, Clock, Hash } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { User } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -32,7 +31,6 @@ export default function UserManagementPage() {
 
   const { data: users, isLoading } = useCollection<User>(usersQuery);
 
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isActivityDialogOpen, setIsActivityDialogOpen] = useState(false);
   const [selectedUserForActivity, setSelectedUserForActivity] = useState<User | null>(null);
 
@@ -90,23 +88,6 @@ export default function UserManagementPage() {
           <h1 className="text-4xl font-extrabold tracking-tight text-primary">User Management</h1>
           <p className="text-muted-foreground mt-2 text-lg">Control user access and track activities.</p>
         </div>
-        
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary h-12 px-6 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all font-bold">
-              <UserPlus className="mr-2 h-5 w-5" /> Add User
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] rounded-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-primary">Add New User</DialogTitle>
-              <DialogDescription>Create a new account for a student, faculty, or administrator.</DialogDescription>
-            </DialogHeader>
-            <div className="p-4 text-center text-muted-foreground">
-              Institutional email (@neu.edu.ph) required for automated profile creation on first login.
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
 
       <Card className="border-none shadow-xl shadow-black/5 bg-white rounded-2xl overflow-hidden">
