@@ -127,11 +127,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await signInWithPopup(auth, provider);
     } catch (error: any) {
       console.error("Google login error:", error);
+      let message = error.message;
+      
       if (error.code === 'auth/popup-closed-by-user') {
-        setError('Login cancelled. Please try again.');
-      } else {
-        setError(error.message);
+        message = 'Login cancelled. Please try again.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        message = 'Google Sign-in is not enabled in the Firebase Console (Authentication > Sign-in method).';
+      } else if (error.code === 'auth/unauthorized-domain') {
+        message = 'This domain is not authorized for OAuth. Add it to "Authorized Domains" in the Firebase Console.';
+      } else if (error.code === 'auth/internal-error') {
+        message = 'A configuration error occurred. Please check your API key restrictions and Redirect URIs.';
       }
+      
+      setError(message);
     }
   };
 

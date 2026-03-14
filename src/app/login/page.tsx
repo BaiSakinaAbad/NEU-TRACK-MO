@@ -71,8 +71,8 @@ export default function LoginPage() {
           <CardContent className="space-y-4">
             {activeError && (
               <Alert variant="destructive" className="bg-destructive/5 text-destructive border-destructive/20 py-2">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="text-xs whitespace-pre-wrap">{activeError}</AlertDescription>
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <AlertDescription className="text-xs whitespace-pre-wrap leading-relaxed">{activeError}</AlertDescription>
               </Alert>
             )}
             
@@ -118,8 +118,8 @@ export default function LoginPage() {
               type="submit" 
               disabled={isLoadingLocal}
             >
-              {isLoadingLocal ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              {isLoadingLocal ? 'Processing...' : 'Log In with Email'}
+              {isLoadingLocal && !authError ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {isLoadingLocal && !authError ? 'Processing...' : 'Log In with Email'}
             </Button>
 
             <div className="relative flex items-center py-1">
@@ -135,7 +135,9 @@ export default function LoginPage() {
               onClick={handleGoogleLogin}
               disabled={isLoadingLocal}
             >
-              {!isLoadingLocal && (
+              {isLoadingLocal && !authError ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
                 <svg className="h-4 w-4" viewBox="0 0 24 24">
                   <path
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -155,7 +157,7 @@ export default function LoginPage() {
                   />
                 </svg>
               )}
-              {isLoadingLocal ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : 'Log in with Google'}
+              {isLoadingLocal && !authError ? 'Processing...' : 'Log in with Google'}
             </Button>
           </CardContent>
           <CardFooter className="pt-2 flex justify-center">
