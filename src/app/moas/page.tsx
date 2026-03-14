@@ -9,7 +9,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore, AlertTriangle, Loader2, X } from 'lucide-react';
+import { Plus, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore, AlertTriangle, Loader2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useSearchParams } from 'next/navigation';
 import { softDeleteMOA, recoverMOA, createMOA, updateMOA } from '@/lib/moa-service';
@@ -47,7 +47,6 @@ export default function MOAListPage() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedMOA, setSelectedMOA] = useState<MOA | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Form State for Add/Edit
   const [formData, setFormData] = useState({
@@ -108,37 +107,29 @@ export default function MOAListPage() {
     return list;
   }, [user, searchTerm, activeTab, isStudent, moas]);
 
-  const handleAddMOA = async (e: React.FormEvent) => {
+  const handleAddMOA = (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     
-    setIsSubmitting(true);
-    try {
-      await createMOA(firestore, user, formData);
-      setIsAddDialogOpen(false);
-      resetForm();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Non-blocking write
+    createMOA(firestore, user, formData);
+    
+    // Immediate UI feedback
+    setIsAddDialogOpen(false);
+    resetForm();
   };
 
-  const handleEditMOA = async (e: React.FormEvent) => {
+  const handleEditMOA = (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !selectedMOA) return;
     
-    setIsSubmitting(true);
-    try {
-      await updateMOA(firestore, user, selectedMOA.id, formData);
-      setIsEditDialogOpen(false);
-      setSelectedMOA(null);
-      resetForm();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Non-blocking write
+    updateMOA(firestore, user, selectedMOA.id, formData);
+    
+    // Immediate UI feedback
+    setIsEditDialogOpen(false);
+    setSelectedMOA(null);
+    resetForm();
   };
 
   const resetForm = () => {
@@ -178,16 +169,6 @@ export default function MOAListPage() {
     setIsEditDialogOpen(true);
   };
 
-  const handleSoftDelete = async (moa: MOA) => {
-    if (!user) return;
-    await softDeleteMOA(firestore, user, moa);
-  };
-
-  const handleRecover = async (moa: MOA) => {
-    if (!user) return;
-    await recoverMOA(firestore, user, moa);
-  };
-
   const getStatusBadge = (status: string) => {
     if (status.startsWith('APPROVED')) return <Badge className="bg-green-100 text-green-800 border-none hover:bg-green-100 font-bold px-3 py-1 rounded-lg">Approved</Badge>;
     if (status.startsWith('PROCESSING')) return <Badge className="bg-blue-100 text-blue-800 border-none hover:bg-blue-100 font-bold px-3 py-1 rounded-lg">Processing</Badge>;
@@ -224,9 +205,8 @@ export default function MOAListPage() {
                   <Button 
                     type="submit" 
                     className="w-full h-12 bg-primary font-bold rounded-xl shadow-lg shadow-primary/20"
-                    disabled={isSubmitting}
                   >
-                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Register Agreement'}
+                    Register Agreement
                   </Button>
                 </DialogFooter>
               </form>
@@ -330,27 +310,27 @@ export default function MOAListPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="rounded-xl p-2 shadow-xl border-border/50 min-w-[160px]">
-                              <DropdownMenuItem className="cursor-pointer rounded-lg py-2" onClick={() => openViewDialog(moa)}>
+                              <DropdownMenuItem className="cursor-pointer rounded-lg py-2" onSelect={() => openViewDialog(moa)}>
                                 <Eye className="mr-2 h-4 w-4" /> View Details
                               </DropdownMenuItem>
                               {isFacultyOrAdmin && (
                                 <>
                                   <DropdownMenuSeparator className="my-1 opacity-50" />
-                                  <DropdownMenuItem className="cursor-pointer rounded-lg py-2" onClick={() => openEditDialog(moa)}>
+                                  <DropdownMenuItem className="cursor-pointer rounded-lg py-2" onSelect={() => openEditDialog(moa)}>
                                     <Edit2 className="mr-2 h-4 w-4" /> Edit
                                   </DropdownMenuItem>
                                   {moa.isDeleted ? (
                                     <>
                                       <DropdownMenuItem 
                                         className="cursor-pointer text-green-600 rounded-lg py-2"
-                                        onClick={() => handleRecover(moa)}
+                                        onSelect={() => recoverMOA(firestore, user!, moa)}
                                       >
                                         <ArchiveRestore className="mr-2 h-4 w-4" /> Recover
                                       </DropdownMenuItem>
                                       {user?.role === 'ADMIN' && (
                                         <DropdownMenuItem 
                                           className="cursor-pointer text-destructive rounded-lg py-2"
-                                          onClick={() => setDeleteConfirmId(moa.id)}
+                                          onSelect={() => setDeleteConfirmId(moa.id)}
                                         >
                                           <Trash2 className="mr-2 h-4 w-4" /> Hard Delete
                                         </DropdownMenuItem>
@@ -359,7 +339,7 @@ export default function MOAListPage() {
                                   ) : (
                                     <DropdownMenuItem 
                                       className="cursor-pointer text-destructive rounded-lg py-2"
-                                      onClick={() => handleSoftDelete(moa)}
+                                      onSelect={() => softDeleteMOA(firestore, user!, moa)}
                                     >
                                       <Trash2 className="mr-2 h-4 w-4" /> Move to Bin
                                     </DropdownMenuItem>
@@ -386,7 +366,7 @@ export default function MOAListPage() {
       </Card>
 
       {/* View Details Dialog */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+      <Dialog open={isViewDialogOpen} onOpenChange={(open) => { setIsViewDialogOpen(open); if(!open) setSelectedMOA(null); }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
             <div className="flex items-center justify-between">
@@ -419,7 +399,7 @@ export default function MOAListPage() {
       </Dialog>
 
       {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={(open) => { setIsEditDialogOpen(open); if (!open) resetForm(); }}>
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => { setIsEditDialogOpen(open); if (!open) { resetForm(); setSelectedMOA(null); } }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-primary">Edit Agreement Record</DialogTitle>
@@ -433,9 +413,8 @@ export default function MOAListPage() {
               <Button 
                 type="submit" 
                 className="w-full h-12 bg-primary font-bold rounded-xl shadow-lg shadow-primary/20"
-                disabled={isSubmitting}
               >
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
+                Save Changes
               </Button>
             </DialogFooter>
           </form>

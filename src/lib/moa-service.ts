@@ -6,15 +6,16 @@ import {
   collection, 
   doc, 
   setDoc, 
-  addDoc, 
   updateDoc, 
-  serverTimestamp, 
   writeBatch 
 } from 'firebase/firestore';
 import { MOA, MOAStatus, User } from './types';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 /**
  * Service to handle MOA operations with integrated audit logging.
+ * Uses non-blocking firestore updates as per guidelines.
  */
 export async function createMOA(db: Firestore, user: User, moaData: Partial<MOA>) {
   const moaRef = doc(collection(db, 'moas'));
@@ -42,7 +43,17 @@ export async function createMOA(db: Firestore, user: User, moaData: Partial<MOA>
     timestamp: new Date().toISOString(),
   });
 
-  return batch.commit();
+  // Non-blocking commit
+  batch.commit().catch(async (err) => {
+    if (err.code === 'permission-denied') {
+      const permissionError = new FirestorePermissionError({
+        path: 'moas (batch)',
+        operation: 'create',
+        requestResourceData: newMoa,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+    }
+  });
 }
 
 export async function updateMOA(db: Firestore, user: User, moaId: string, newData: Partial<MOA>) {
@@ -68,7 +79,17 @@ export async function updateMOA(db: Firestore, user: User, moaId: string, newDat
     timestamp: new Date().toISOString(),
   });
 
-  return batch.commit();
+  // Non-blocking commit
+  batch.commit().catch(async (err) => {
+    if (err.code === 'permission-denied') {
+      const permissionError = new FirestorePermissionError({
+        path: `moas/${moaId}`,
+        operation: 'update',
+        requestResourceData: updatedData,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+    }
+  });
 }
 
 export async function updateMOAStatus(db: Firestore, user: User, moa: MOA, newStatus: MOAStatus) {
@@ -101,7 +122,7 @@ export async function softDeleteMOA(db: Firestore, user: User, moa: MOA) {
   
   const batch = writeBatch(db);
   
-  batch.update(moaRef, { isDeleted: true });
+  batch.update(moaRef, { isDeleted: true, updatedAt: new Date().toISOString() });
   
   batch.set(logRef, {
     userId: user.id,
@@ -113,7 +134,16 @@ export async function softDeleteMOA(db: Firestore, user: User, moa: MOA) {
     timestamp: new Date().toISOString(),
   });
 
-  return batch.commit();
+  // Non-blocking commit
+  batch.commit().catch(async (err) => {
+    if (err.code === 'permission-denied') {
+      const permissionError = new FirestorePermissionError({
+        path: `moas/${moa.id}`,
+        operation: 'delete',
+      });
+      errorEmitter.emit('permission-error', permissionError);
+    }
+  });
 }
 
 export async function recoverMOA(db: Firestore, user: User, moa: MOA) {
@@ -122,7 +152,7 @@ export async function recoverMOA(db: Firestore, user: User, moa: MOA) {
   
   const batch = writeBatch(db);
   
-  batch.update(moaRef, { isDeleted: false });
+  batch.update(moaRef, { isDeleted: false, updatedAt: new Date().toISOString() });
   
   batch.set(logRef, {
     userId: user.id,
@@ -134,5 +164,14 @@ export async function recoverMOA(db: Firestore, user: User, moa: MOA) {
     timestamp: new Date().toISOString(),
   });
 
-  return batch.commit();
+  // Non-blocking commit
+  batch.commit().catch(async (err) => {
+    if (err.code === 'permission-denied') {
+      const permissionError = new FirestorePermissionError({
+        path: `moas/${moa.id}`,
+        operation: 'update',
+      });
+      errorEmitter.emit('permission-error', permissionError);
+    }
+  });
 }
