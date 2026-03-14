@@ -1,13 +1,34 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './auth-context';
-import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
-import { LayoutDashboard, FileText, Users, History, LogOut, Search, Radar } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  FileText, 
+  Users, 
+  History, 
+  LogOut, 
+  Search, 
+  Radar, 
+  ChevronDown,
+  Menu,
+  X
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
+import { 
+  DropdownMenu, 
+  DropdownMenuTrigger, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
@@ -16,6 +37,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   
   const [searchValue, setSearchValue] = useState(searchParams.get('search') || '');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setSearchValue(searchParams.get('search') || '');
@@ -32,7 +54,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       params.delete('search');
     }
     
-    // Only update params for pages that support search, otherwise redirect to MOA list
     if (pathname === '/moas' || pathname === '/admin/users') {
       router.replace(`${pathname}?${params.toString()}`);
     } else {
@@ -49,93 +70,133 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const filteredMenu = menuItems.filter(item => item.roles.includes(user.role));
 
-  // Only show search on MOA List and User Management
   const showSearch = pathname === '/moas' || pathname === '/admin/users';
   const searchPlaceholder = pathname === '/admin/users' 
-    ? "Search users by name or email..." 
-    : "Search MOAs by college, industry, or company...";
+    ? "Search users..." 
+    : "Search MOAs...";
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-[#fcfdfe] font-body">
-        <Sidebar className="border-r border-border/60">
-          <SidebarHeader className="p-6 flex flex-row items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-              <Radar className="text-white w-6 h-6" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-lg text-primary leading-tight">Track Mo</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold">Monitoring System</span>
-            </div>
-          </SidebarHeader>
+    <div className="min-h-screen w-full bg-[#fcfdfe] font-body flex flex-col">
+      {/* Top Navbar */}
+      <header className="sticky top-0 z-50 h-16 w-full border-b border-border/40 bg-white/80 backdrop-blur-xl px-4 sm:px-8 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+        <div className="mx-auto flex h-full items-center justify-between max-w-screen-2xl">
           
-          <SidebarContent className="px-3 pt-4">
-            <SidebarMenu className="gap-2">
-              {filteredMenu.map((item) => (
-                <SidebarMenuItem key={item.name}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={pathname === item.href}
-                    className={`h-12 px-4 rounded-xl transition-all duration-200 ${
-                      pathname === item.href 
-                      ? 'bg-accent text-primary shadow-sm font-semibold' 
-                      : 'hover:bg-accent/40 text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    <Link href={item.href} className="flex items-center gap-4">
-                      <item.icon className={`h-5 w-5 ${pathname === item.href ? 'text-primary' : 'text-muted-foreground'}`} />
-                      <span>{item.name}</span>
+          {/* Left Side: Brand & Mobile Menu */}
+          <div className="flex items-center gap-4">
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[280px] p-6">
+                <div className="flex items-center gap-3 mb-8">
+                  <Radar className="text-primary w-6 h-6" />
+                  <span className="font-bold text-lg text-primary">Track Mo</span>
+                </div>
+                <nav className="flex flex-col gap-2">
+                  {filteredMenu.map((item) => (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all",
+                        pathname === item.href 
+                          ? "bg-accent text-primary" 
+                          : "text-muted-foreground hover:bg-accent/40"
+                      )}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      {item.name}
                     </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarContent>
+                  ))}
+                </nav>
+              </SheetContent>
+            </Sheet>
 
-          <SidebarFooter className="p-6 mt-auto">
-            <Separator className="mb-6 opacity-50" />
-            <div className="flex items-center gap-3 mb-6">
-              <Avatar className="h-10 w-10 ring-2 ring-primary/5 shadow-sm">
-                <AvatarFallback className="bg-primary/5 text-primary font-bold">
-                  {user.name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col overflow-hidden">
-                <span className="text-sm font-bold text-foreground truncate">{user.name}</span>
-                <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{user.role}</span>
+            <Link href="/" className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-md shadow-primary/20">
+                <Radar className="text-white w-5 h-5" />
               </div>
-            </div>
-            <button 
-              onClick={logout}
-              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-bold text-destructive hover:bg-destructive/5 rounded-xl transition-all"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign Out
-            </button>
-          </SidebarFooter>
-        </Sidebar>
-        
-        <SidebarInset className="bg-[#fcfdfe]">
-          <header className="sticky top-0 z-10 flex h-20 items-center gap-4 border-b border-border/40 bg-white/80 backdrop-blur-xl px-8 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-            <SidebarTrigger className="md:hidden" />
+              <span className="font-bold text-lg text-primary tracking-tight hidden sm:inline-block">Track Mo</span>
+            </Link>
+
+            {/* Desktop Navigation Links */}
+            <nav className="hidden md:flex items-center ml-8 gap-1">
+              {filteredMenu.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all",
+                    pathname === item.href 
+                      ? "text-primary bg-primary/5" 
+                      : "text-muted-foreground hover:text-primary hover:bg-primary/5"
+                  )}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          {/* Right Side: Search & User Profile */}
+          <div className="flex items-center gap-4">
             {showSearch && (
-              <div className="flex-1 flex items-center gap-3 text-sm text-muted-foreground">
-                <Search className="h-4 w-4 text-muted-foreground/60" />
+              <div className="relative hidden lg:flex items-center h-10 w-64 px-3 bg-muted/30 rounded-xl border border-border/40 focus-within:border-primary/30 focus-within:bg-white transition-all">
+                <Search className="h-4 w-4 text-muted-foreground/60 mr-2" />
                 <input 
                   type="text" 
                   placeholder={searchPlaceholder}
-                  className="bg-transparent border-none focus:ring-0 w-full max-w-xl outline-none placeholder:text-muted-foreground/50"
+                  className="bg-transparent border-none focus:ring-0 w-full outline-none text-xs font-medium placeholder:text-muted-foreground/50"
                   value={searchValue}
                   onChange={(e) => handleSearch(e.target.value)}
                 />
               </div>
             )}
-          </header>
-          <main className="p-8">
-            {children}
-          </main>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="flex items-center gap-2 cursor-pointer p-1.5 rounded-xl hover:bg-muted/30 transition-all select-none border border-transparent hover:border-border/40">
+                  <Avatar className="h-8 w-8 ring-2 ring-primary/5 shadow-sm">
+                    <AvatarFallback className="bg-primary/5 text-primary font-bold text-xs uppercase">
+                      {user.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="hidden sm:flex flex-col items-start leading-none gap-0.5">
+                    <span className="text-[11px] font-bold text-foreground truncate max-w-[100px]">{user.name}</span>
+                    <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-tight">{user.role}</span>
+                  </div>
+                  <ChevronDown className="h-3 w-3 text-muted-foreground/60" />
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 rounded-xl p-2 shadow-xl border-border/50">
+                <DropdownMenuLabel className="font-bold text-xs text-muted-foreground px-2 py-1.5 uppercase tracking-widest">
+                  Account Settings
+                </DropdownMenuLabel>
+                <div className="px-2 py-2 mb-1">
+                  <p className="text-xs font-bold text-foreground truncate">{user.name}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{user.email}</p>
+                </div>
+                <DropdownMenuSeparator className="opacity-50" />
+                <DropdownMenuItem 
+                  onClick={logout}
+                  className="cursor-pointer rounded-lg py-2 text-destructive focus:text-destructive focus:bg-destructive/5 font-bold text-xs"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 w-full mx-auto max-w-screen-2xl p-4 sm:p-8">
+        {children}
+      </main>
+    </div>
   );
 }
