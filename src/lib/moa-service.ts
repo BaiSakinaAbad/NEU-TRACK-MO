@@ -45,6 +45,32 @@ export async function createMOA(db: Firestore, user: User, moaData: Partial<MOA>
   return batch.commit();
 }
 
+export async function updateMOA(db: Firestore, user: User, moaId: string, newData: Partial<MOA>) {
+  const moaRef = doc(db, 'moas', moaId);
+  const logRef = doc(collection(db, 'audit_logs'));
+  
+  const batch = writeBatch(db);
+  
+  const updatedData = {
+    ...newData,
+    updatedAt: new Date().toISOString()
+  };
+
+  batch.update(moaRef, updatedData);
+  
+  batch.set(logRef, {
+    userId: user.id,
+    userName: user.name,
+    operation: 'UPDATE',
+    moaId: moaId,
+    moaName: newData.companyName,
+    details: `Updated record for ${newData.companyName}`,
+    timestamp: new Date().toISOString(),
+  });
+
+  return batch.commit();
+}
+
 export async function updateMOAStatus(db: Firestore, user: User, moa: MOA, newStatus: MOAStatus) {
   const moaRef = doc(db, 'moas', moa.id);
   const logRef = doc(collection(db, 'audit_logs'));
