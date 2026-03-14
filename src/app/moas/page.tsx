@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -9,11 +8,12 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore, AlertTriangle, Loader2 } from 'lucide-react';
+import { Plus, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore, AlertTriangle, Search } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useSearchParams } from 'next/navigation';
 import { softDeleteMOA, recoverMOA, createMOA, updateMOA } from '@/lib/moa-service';
 import { MOA, MOAStatus, MOA_STATUS_LABELS } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -37,18 +37,20 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function MOAListPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const firestore = useFirestore();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
+  
   const [activeTab, setActiveTab] = useState<'ALL' | 'ACTIVE' | 'PROCESSING' | 'DELETED'>('ALL');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedMOA, setSelectedMOA] = useState<MOA | null>(null);
   
-  // Form State for Add/Edit
   const [formData, setFormData] = useState({
     companyName: '',
     hteId: '',
@@ -111,10 +113,8 @@ export default function MOAListPage() {
     e.preventDefault();
     if (!user) return;
     
-    // Non-blocking write
+    // Non-blocking write for optimistic UI
     createMOA(firestore, user, formData);
-    
-    // Immediate UI feedback
     setIsAddDialogOpen(false);
     resetForm();
   };
@@ -123,10 +123,8 @@ export default function MOAListPage() {
     e.preventDefault();
     if (!user || !selectedMOA) return;
     
-    // Non-blocking write
+    // Non-blocking write for optimistic UI
     updateMOA(firestore, user, selectedMOA.id, formData);
-    
-    // Immediate UI feedback
     setIsEditDialogOpen(false);
     setSelectedMOA(null);
     resetForm();
@@ -177,6 +175,27 @@ export default function MOAListPage() {
     return <Badge variant="outline" className="font-bold px-3 py-1 rounded-lg">{status}</Badge>;
   };
 
+  const MOASkeleton = () => (
+    <>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <TableRow key={i}>
+          <TableCell className="px-6 py-5">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[150px] animate-skeleton" />
+              <Skeleton className="h-3 w-[100px] animate-skeleton" />
+            </div>
+          </TableCell>
+          <TableCell><Skeleton className="h-4 w-[120px] animate-skeleton" /></TableCell>
+          <TableCell><Skeleton className="h-4 w-[100px] animate-skeleton" /></TableCell>
+          <TableCell><Skeleton className="h-6 w-[80px] rounded-lg animate-skeleton" /></TableCell>
+          <TableCell><Skeleton className="h-6 w-[60px] rounded-lg animate-skeleton" /></TableCell>
+          {!isStudent && <TableCell><Skeleton className="h-4 w-[100px] animate-skeleton" /></TableCell>}
+          <TableCell className="text-right px-6"><Skeleton className="h-8 w-8 rounded-lg ml-auto animate-skeleton" /></TableCell>
+        </TableRow>
+      ))}
+    </>
+  );
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -202,10 +221,7 @@ export default function MOAListPage() {
               <form onSubmit={handleAddMOA} className="space-y-6 py-4">
                 <MOAFormFields formData={formData} setFormData={setFormData} />
                 <DialogFooter className="pt-4">
-                  <Button 
-                    type="submit" 
-                    className="w-full h-12 bg-primary font-bold rounded-xl shadow-lg shadow-primary/20"
-                  >
+                  <Button type="submit" className="w-full h-12 bg-primary font-bold rounded-xl shadow-lg shadow-primary/20">
                     Register Agreement
                   </Button>
                 </DialogFooter>
@@ -219,153 +235,123 @@ export default function MOAListPage() {
         {!isStudent && (
           <div className="p-6 pb-0 flex justify-between items-center border-b border-border/50">
             <div className="flex items-center gap-2 border rounded-xl p-1 bg-muted/20 mb-6">
-              <Button 
-                variant={activeTab === 'ALL' ? 'secondary' : 'ghost'} 
-                size="sm" 
-                onClick={() => setActiveTab('ALL')}
-                className={`text-xs h-9 px-4 rounded-lg transition-all ${activeTab === 'ALL' ? 'shadow-sm font-bold' : ''}`}
-              >
-                All Agreements
-              </Button>
-              <Button 
-                variant={activeTab === 'ACTIVE' ? 'secondary' : 'ghost'} 
-                size="sm" 
-                onClick={() => setActiveTab('ACTIVE')}
-                className={`text-xs h-9 px-4 rounded-lg transition-all ${activeTab === 'ACTIVE' ? 'shadow-sm font-bold' : ''}`}
-              >
-                Active
-              </Button>
-              <Button 
-                variant={activeTab === 'PROCESSING' ? 'secondary' : 'ghost'} 
-                size="sm" 
-                onClick={() => setActiveTab('PROCESSING')}
-                className={`text-xs h-9 px-4 rounded-lg transition-all ${activeTab === 'PROCESSING' ? 'shadow-sm font-bold' : ''}`}
-              >
-                Processing
-              </Button>
-              {user?.role === 'ADMIN' && (
-                <Button 
-                  variant={activeTab === 'DELETED' ? 'secondary' : 'ghost'} 
-                  size="sm" 
-                  onClick={() => setActiveTab('DELETED')}
-                  className={`text-xs h-9 px-4 rounded-lg transition-all ${activeTab === 'DELETED' ? 'shadow-sm font-bold text-destructive' : ''}`}
-                >
-                  Recycle Bin
-                </Button>
-              )}
+              {['ALL', 'ACTIVE', 'PROCESSING', 'DELETED'].map((tab) => {
+                if (tab === 'DELETED' && user?.role !== 'ADMIN') return null;
+                return (
+                  <Button 
+                    key={tab}
+                    variant={activeTab === tab ? 'secondary' : 'ghost'} 
+                    size="sm" 
+                    onClick={() => setActiveTab(tab as any)}
+                    className={`text-xs h-9 px-4 rounded-lg transition-all ${activeTab === tab ? 'shadow-sm font-bold' : ''}`}
+                  >
+                    {tab.charAt(0) + tab.slice(1).toLowerCase()}
+                  </Button>
+                );
+              })}
             </div>
           </div>
         )}
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            {isDataLoading || isAuthLoading ? (
-              <div className="flex flex-col items-center justify-center h-64 gap-3">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-muted-foreground font-medium">Loading agreements...</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/30 border-b border-border/50 hover:bg-muted/30">
-                    <TableHead className="font-bold text-primary py-5 px-6">Company</TableHead>
-                    <TableHead className="font-bold text-primary py-5">Contact Person</TableHead>
-                    <TableHead className="font-bold text-primary py-5">Industry</TableHead>
-                    <TableHead className="font-bold text-primary py-5">Status</TableHead>
-                    <TableHead className="font-bold text-primary py-5">College</TableHead>
-                    {!isStudent && <TableHead className="font-bold text-primary py-5">Expiry Date</TableHead>}
-                    <TableHead className="text-right px-6"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredMOAs.length > 0 ? (
-                    filteredMOAs.map((moa) => (
-                      <TableRow key={moa.id} className="hover:bg-accent/10 transition-colors border-b border-border/30">
-                        <TableCell className="px-6 py-5">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-foreground">{moa.companyName}</span>
-                            <span className="text-xs text-muted-foreground truncate max-w-[200px] font-normal mt-0.5">{moa.companyAddress}</span>
-                          </div>
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/30 border-b border-border/50 hover:bg-muted/30">
+                  <TableHead className="font-bold text-primary py-5 px-6">Company</TableHead>
+                  <TableHead className="font-bold text-primary py-5">Contact Person</TableHead>
+                  <TableHead className="font-bold text-primary py-5">Industry</TableHead>
+                  <TableHead className="font-bold text-primary py-5">Status</TableHead>
+                  <TableHead className="font-bold text-primary py-5">College</TableHead>
+                  {!isStudent && <TableHead className="font-bold text-primary py-5">Expiry Date</TableHead>}
+                  <TableHead className="text-right px-6"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isDataLoading || isAuthLoading ? (
+                  <MOASkeleton />
+                ) : filteredMOAs.length > 0 ? (
+                  filteredMOAs.map((moa) => (
+                    <TableRow key={moa.id} className="hover:bg-accent/10 transition-colors border-b border-border/30">
+                      <TableCell className="px-6 py-5">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-foreground">{moa.companyName}</span>
+                          <span className="text-xs text-muted-foreground truncate max-w-[200px] font-normal mt-0.5">{moa.companyAddress}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-muted-foreground">{moa.contactPerson}</span>
+                          <span className="text-[11px] text-muted-foreground/60 font-medium">{moa.contactEmail}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground font-medium">{moa.industryType}</TableCell>
+                      <TableCell>{getStatusBadge(moa.status)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-bold text-muted-foreground border-border/60 bg-muted/10 px-3 py-1 rounded-lg">{moa.endorsedByCollege}</Badge>
+                      </TableCell>
+                      {!isStudent && (
+                        <TableCell className="text-sm font-medium text-muted-foreground/80">
+                          {moa.expiryDate ? new Date(moa.expiryDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}
                         </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-bold text-muted-foreground">{moa.contactPerson}</span>
-                            <span className="text-[11px] text-muted-foreground/60 font-medium">{moa.contactEmail}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground font-medium">{moa.industryType}</TableCell>
-                        <TableCell>{getStatusBadge(moa.status)}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="font-bold text-muted-foreground border-border/60 bg-muted/10 px-3 py-1 rounded-lg">{moa.endorsedByCollege}</Badge>
-                        </TableCell>
-                        {!isStudent && (
-                          <TableCell className="text-sm font-medium text-muted-foreground/80">
-                            {moa.expiryDate ? new Date(moa.expiryDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}
-                          </TableCell>
-                        )}
-                        <TableCell className="text-right px-6">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="hover:bg-accent rounded-lg">
-                                <MoreVertical className="h-5 w-5 text-muted-foreground" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="rounded-xl p-2 shadow-xl border-border/50 min-w-[160px]">
-                              <DropdownMenuItem className="cursor-pointer rounded-lg py-2" onSelect={() => openViewDialog(moa)}>
-                                <Eye className="mr-2 h-4 w-4" /> View Details
-                              </DropdownMenuItem>
-                              {isFacultyOrAdmin && (
-                                <>
-                                  <DropdownMenuSeparator className="my-1 opacity-50" />
-                                  <DropdownMenuItem className="cursor-pointer rounded-lg py-2" onSelect={() => openEditDialog(moa)}>
-                                    <Edit2 className="mr-2 h-4 w-4" /> Edit
-                                  </DropdownMenuItem>
-                                  {moa.isDeleted ? (
-                                    <>
-                                      <DropdownMenuItem 
-                                        className="cursor-pointer text-green-600 rounded-lg py-2"
-                                        onSelect={() => recoverMOA(firestore, user!, moa)}
-                                      >
-                                        <ArchiveRestore className="mr-2 h-4 w-4" /> Recover
-                                      </DropdownMenuItem>
-                                      {user?.role === 'ADMIN' && (
-                                        <DropdownMenuItem 
-                                          className="cursor-pointer text-destructive rounded-lg py-2"
-                                          onSelect={() => setDeleteConfirmId(moa.id)}
-                                        >
-                                          <Trash2 className="mr-2 h-4 w-4" /> Hard Delete
-                                        </DropdownMenuItem>
-                                      )}
-                                    </>
-                                  ) : (
+                      )}
+                      <TableCell className="text-right px-6">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="hover:bg-accent rounded-lg">
+                              <MoreVertical className="h-5 w-5 text-muted-foreground" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="rounded-xl p-2 shadow-xl border-border/50 min-w-[160px]">
+                            <DropdownMenuItem className="cursor-pointer rounded-lg py-2" onSelect={() => openViewDialog(moa)}>
+                              <Eye className="mr-2 h-4 w-4" /> View Details
+                            </DropdownMenuItem>
+                            {isFacultyOrAdmin && (
+                              <>
+                                <DropdownMenuSeparator className="my-1 opacity-50" />
+                                <DropdownMenuItem className="cursor-pointer rounded-lg py-2" onSelect={() => openEditDialog(moa)}>
+                                  <Edit2 className="mr-2 h-4 w-4" /> Edit
+                                </DropdownMenuItem>
+                                {moa.isDeleted ? (
+                                  <>
                                     <DropdownMenuItem 
-                                      className="cursor-pointer text-destructive rounded-lg py-2"
-                                      onSelect={() => softDeleteMOA(firestore, user!, moa)}
+                                      className="cursor-pointer text-green-600 rounded-lg py-2"
+                                      onSelect={() => recoverMOA(firestore, user!, moa)}
                                     >
-                                      <Trash2 className="mr-2 h-4 w-4" /> Move to Bin
+                                      <ArchiveRestore className="mr-2 h-4 w-4" /> Recover
                                     </DropdownMenuItem>
-                                  )}
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={isStudent ? 6 : 7} className="h-32 text-center text-muted-foreground font-medium">
-                        No matching records found.
+                                  </>
+                                ) : (
+                                  <DropdownMenuItem 
+                                    className="cursor-pointer text-destructive rounded-lg py-2"
+                                    onSelect={() => softDeleteMOA(firestore, user!, moa)}
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" /> Move to Bin
+                                  </DropdownMenuItem>
+                                )}
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            )}
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={isStudent ? 6 : 7} className="h-32 text-center text-muted-foreground font-medium">
+                      <div className="flex flex-col items-center gap-2">
+                        <Search className="h-8 w-8 opacity-20" />
+                        No matching records found.
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
 
-      {/* View Details Dialog */}
+      {/* View/Edit Dialogs (unchanged structure, but used with non-blocking updates) */}
       <Dialog open={isViewDialogOpen} onOpenChange={(open) => { setIsViewDialogOpen(open); if(!open) setSelectedMOA(null); }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
@@ -388,61 +374,27 @@ export default function MOAListPage() {
                 <DetailItem label="Endorsed College" value={selectedMOA.endorsedByCollege} />
                 <DetailItem label="Status Label" value={MOA_STATUS_LABELS[selectedMOA.status]} />
               </div>
-              <Separator className="my-4" />
-              <div className="grid grid-cols-2 gap-4 text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
-                <div>Created: {new Date(selectedMOA.createdAt).toLocaleString()}</div>
-                <div className="text-right">Last Updated: {new Date(selectedMOA.updatedAt).toLocaleString()}</div>
-              </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={(open) => { setIsEditDialogOpen(open); if (!open) { resetForm(); setSelectedMOA(null); } }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-primary">Edit Agreement Record</DialogTitle>
-            <DialogDescription>
-              Update information for the Host Training Establishment.
-            </DialogDescription>
+            <DialogDescription>Update information for the Host Training Establishment.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditMOA} className="space-y-6 py-4">
             <MOAFormFields formData={formData} setFormData={setFormData} />
             <DialogFooter className="pt-4">
-              <Button 
-                type="submit" 
-                className="w-full h-12 bg-primary font-bold rounded-xl shadow-lg shadow-primary/20"
-              >
+              <Button type="submit" className="w-full h-12 bg-primary font-bold rounded-xl shadow-lg shadow-primary/20">
                 Save Changes
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
-
-      <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
-        <AlertDialogContent className="rounded-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
-              Permanent Deletion
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently remove the agreement from the system.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              className="bg-destructive hover:bg-destructive/90 rounded-xl font-bold"
-              onClick={() => setDeleteConfirmId(null)}
-            >
-              Permanently Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
@@ -483,7 +435,7 @@ function MOAFormFields({ formData, setFormData }: { formData: any, setFormData: 
       <div className="space-y-2">
         <Label className="text-xs font-bold uppercase text-muted-foreground">Industry Type</Label>
         <Input 
-          placeholder="e.g. Technology, Finance" 
+          placeholder="e.g. Technology" 
           className="h-12 bg-muted/30 border-none"
           value={formData.industryType}
           onChange={(e) => setFormData({...formData, industryType: e.target.value})}

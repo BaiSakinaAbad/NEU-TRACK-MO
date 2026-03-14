@@ -25,6 +25,10 @@
     --ring: 212 97% 24%;
     --radius: 0.6rem;
 
+    /* Custom Skeleton Palette */
+    --skeleton-bg: 43 45% 90%; /* #f2e8cf based HSL approx */
+    --skeleton-pulse: 88 38% 45%; /* #6a994e based HSL approx */
+
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 212 97% 24%;
@@ -42,5 +46,34 @@
   }
   body {
     @apply bg-background text-foreground font-body;
+  }
+}
+
+.animate-skeleton {
+  background-color: hsl(var(--skeleton-bg));
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-skeleton::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgba(106, 153, 78, 0.1),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
   }
 }
