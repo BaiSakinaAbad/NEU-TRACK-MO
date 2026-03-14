@@ -1,9 +1,9 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useAuth } from '@/components/auth-context';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, doc, updateDoc } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -13,7 +13,6 @@ import { UserPlus, MoreHorizontal, History, Ban, CheckCircle2, Clock, Hash } fro
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -26,22 +25,18 @@ export default function UserManagementPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  const usersQuery = useMemo(() => query(collection(firestore, 'users')), [firestore]);
+  // Stabilized query to prevent infinite render loops
+  const usersQuery = useMemoFirebase(() => {
+    return query(collection(firestore, 'users'));
+  }, [firestore]);
+
   const { data: users, isLoading } = useCollection<User>(usersQuery);
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isActivityDialogOpen, setIsActivityDialogOpen] = useState(false);
   const [selectedUserForActivity, setSelectedUserForActivity] = useState<User | null>(null);
 
-  if (currentUser?.role !== 'ADMIN') {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-destructive font-semibold">Access Denied: Administrative privileges required.</p>
-      </div>
-    );
-  }
-
-  const toggleBlock = (userId: string, currentStatus: boolean) => {
+  const toggleBlock = useCallback((userId: string, currentStatus: boolean) => {
     const userRef = doc(firestore, 'users', userId);
     
     updateDoc(userRef, { isBlocked: !currentStatus })
@@ -61,7 +56,23 @@ export default function UserManagementPage() {
           });
         }
       });
-  };
+  }, [firestore, toast]);
+
+  // DECOUPLING FIX: Ensure dropdown closes before dialog opens to prevent focus deadlock
+  const handleViewActivity = useCallback((user: User) => {
+    setTimeout(() => {
+      setSelectedUserForActivity(user);
+      setIsActivityDialogOpen(true);
+    }, 0);
+  }, []);
+
+  if (currentUser?.role !== 'ADMIN') {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-destructive font-semibold">Access Denied: Administrative privileges required.</p>
+      </div>
+    );
+  }
 
   const getRoleColor = (role: string) => {
     switch(role) {
@@ -71,28 +82,6 @@ export default function UserManagementPage() {
       default: return '';
     }
   };
-
-  const UserSkeleton = () => (
-    <>
-      {[1, 2, 3, 4].map((i) => (
-        <TableRow key={i}>
-          <TableCell className="px-6 py-5">
-            <div className="flex items-center gap-4">
-              <Skeleton className="h-11 w-11 rounded-full" />
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-[120px]" />
-                <Skeleton className="h-3 w-[150px]" />
-              </div>
-            </div>
-          </TableCell>
-          <TableCell><Skeleton className="h-6 w-[80px] rounded-lg" /></TableCell>
-          <TableCell><Skeleton className="h-6 w-[80px] rounded-lg" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
-          <TableCell className="text-right px-6"><Skeleton className="h-8 w-8 rounded-lg ml-auto" /></TableCell>
-        </TableRow>
-      ))}
-    </>
-  );
 
   return (
     <div className="space-y-8">
@@ -134,7 +123,23 @@ export default function UserManagementPage() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <UserSkeleton />
+                [1, 2, 3, 4].map((i) => (
+                  <TableRow key={i}>
+                    <TableCell className="px-6 py-5">
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="h-11 w-11 rounded-full" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-[120px]" />
+                          <Skeleton className="h-3 w-[150px]" />
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell><Skeleton className="h-6 w-[80px] rounded-lg" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-[80px] rounded-lg" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
+                    <TableCell className="text-right px-6"><Skeleton className="h-8 w-8 rounded-lg ml-auto" /></TableCell>
+                  </TableRow>
+                ))
               ) : (
                 users && users.map((user) => (
                   <TableRow key={user.id} className="hover:bg-accent/10 transition-colors border-b border-border/30">
@@ -180,10 +185,7 @@ export default function UserManagementPage() {
                         <DropdownMenuContent align="end" className="rounded-xl p-2 shadow-xl border-border/50 min-w-[160px]">
                           <DropdownMenuItem 
                             className="cursor-pointer rounded-lg py-2"
-                            onSelect={() => {
-                              setSelectedUserForActivity(user);
-                              setIsActivityDialogOpen(true);
-                            }}
+                            onSelect={() => handleViewActivity(user)}
                           >
                             <History className="mr-2 h-4 w-4" /> View Activity
                           </DropdownMenuItem>
@@ -192,7 +194,7 @@ export default function UserManagementPage() {
                               <DropdownMenuSeparator className="my-1 opacity-50" />
                               <DropdownMenuItem 
                                 className={`cursor-pointer rounded-lg py-2 ${user.isBlocked ? 'text-green-600' : 'text-destructive'}`}
-                                onClick={() => toggleBlock(user.id, user.isBlocked)}
+                                onSelect={() => toggleBlock(user.id, user.isBlocked)}
                               >
                                 {user.isBlocked ? (
                                   <><CheckCircle2 className="mr-2 h-4 w-4" /> Unblock User</>
