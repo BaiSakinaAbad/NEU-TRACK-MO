@@ -43,7 +43,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50/50 p-4 font-body">
       <Card className="w-full max-w-md shadow-2xl border-none p-6 bg-white">
         <CardHeader className="space-y-1 text-center pb-6">
-          <CardTitle className="text-3xl font-bold tracking-tight text-primary">MOA Track</CardTitle>
+          <CardTitle className="text-3xl font-bold tracking-tight text-primary">Track Mo</CardTitle>
           <CardDescription className="text-base text-muted-foreground">
             University Partnership Monitoring
           </CardDescription>

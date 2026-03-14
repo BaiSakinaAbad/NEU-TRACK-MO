@@ -1,10 +1,9 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './auth-context';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
-import { LayoutDashboard, FileText, Users, History, LogOut, Search, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, History, LogOut, Search, Radar } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -62,10 +61,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <Sidebar className="border-r border-border/60">
           <SidebarHeader className="p-6 flex flex-row items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-              <ShieldCheck className="text-white w-6 h-6" />
+              <Radar className="text-white w-6 h-6" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-lg text-primary leading-tight">MOA Track</span>
+              <span className="font-bold text-lg text-primary leading-tight">Track Mo</span>
               <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold">Monitoring System</span>
             </div>
           </SidebarHeader>

@@ -5,7 +5,7 @@ import { AppLayout } from '@/components/app-layout';
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'MOA Track - University MOA Monitoring System',
+  title: 'Track Mo - University MOA Monitoring System',
   description: 'Track and manage university memorandum of agreements with ease.',
 };
 
