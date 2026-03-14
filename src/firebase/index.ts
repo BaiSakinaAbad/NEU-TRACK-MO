@@ -1,7 +1,6 @@
-
 'use client';
 
-import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
+import { initializeApp, getApps, FirebaseApp, getApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { 
   getFirestore, 
@@ -19,12 +18,14 @@ export function initializeFirebase(): {
   auth: Auth;
   firestore: Firestore;
 } {
-  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  // Ensure we don't initialize multiple times
+  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
   const auth = getAuth(app);
   const firestore = getFirestore(app);
 
   // Enable persistence for offline support and faster local reads
-  if (typeof window !== 'undefined') {
+  // Only execute on the client and only if the config is valid
+  if (typeof window !== 'undefined' && firebaseConfig.projectId) {
     enableMultiTabIndexedDbPersistence(firestore).catch((err) => {
       if (err.code === 'failed-precondition') {
         // Multiple tabs open, persistence can only be enabled in one tab at a time.
