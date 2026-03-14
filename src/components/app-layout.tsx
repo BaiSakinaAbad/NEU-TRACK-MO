@@ -33,7 +33,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       params.delete('search');
     }
     
-    if (pathname.startsWith('/moas') || pathname.startsWith('/dashboard')) {
+    // Only update params for pages that support search, otherwise redirect to MOA list
+    if (pathname === '/moas' || pathname === '/admin/users') {
       router.replace(`${pathname}?${params.toString()}`);
     } else {
       router.push(`/moas?${params.toString()}`);
@@ -48,6 +49,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   ];
 
   const filteredMenu = menuItems.filter(item => item.roles.includes(user.role));
+
+  // Only show search on MOA List and User Management
+  const showSearch = pathname === '/moas' || pathname === '/admin/users';
+  const searchPlaceholder = pathname === '/admin/users' 
+    ? "Search users by name or email..." 
+    : "Search MOAs by college, industry, or company...";
 
   return (
     <SidebarProvider>
@@ -112,16 +119,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarInset className="bg-[#fcfdfe]">
           <header className="sticky top-0 z-10 flex h-20 items-center gap-4 border-b border-border/40 bg-white/80 backdrop-blur-xl px-8 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
             <SidebarTrigger className="md:hidden" />
-            <div className="flex-1 flex items-center gap-3 text-sm text-muted-foreground">
-              <Search className="h-4 w-4 text-muted-foreground/60" />
-              <input 
-                type="text" 
-                placeholder="Search MOAs by college, industry, or company..." 
-                className="bg-transparent border-none focus:ring-0 w-full max-w-xl outline-none placeholder:text-muted-foreground/50"
-                value={searchValue}
-                onChange={(e) => handleSearch(e.target.value)}
-              />
-            </div>
+            {showSearch && (
+              <div className="flex-1 flex items-center gap-3 text-sm text-muted-foreground">
+                <Search className="h-4 w-4 text-muted-foreground/60" />
+                <input 
+                  type="text" 
+                  placeholder={searchPlaceholder}
+                  className="bg-transparent border-none focus:ring-0 w-full max-w-xl outline-none placeholder:text-muted-foreground/50"
+                  value={searchValue}
+                  onChange={(e) => handleSearch(e.target.value)}
+                />
+              </div>
+            )}
           </header>
           <main className="p-8">
             {children}

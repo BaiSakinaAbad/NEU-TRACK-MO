@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/components/auth-context';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, doc, updateDoc } from 'firebase/firestore';
@@ -18,11 +19,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useSearchParams } from 'next/navigation';
 
 export default function UserManagementPage() {
   const { user: currentUser } = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const searchTerm = searchParams.get('search') || '';
   
   // Stabilized query to prevent infinite render loops
   const usersQuery = useMemoFirebase(() => {
@@ -33,6 +37,16 @@ export default function UserManagementPage() {
 
   const [isActivityDialogOpen, setIsActivityDialogOpen] = useState(false);
   const [selectedUserForActivity, setSelectedUserForActivity] = useState<User | null>(null);
+
+  const filteredUsers = useMemo(() => {
+    if (!users) return [];
+    if (!searchTerm) return users;
+    const term = searchTerm.toLowerCase();
+    return users.filter(u => 
+      u.name.toLowerCase().includes(term) || 
+      u.email.toLowerCase().includes(term)
+    );
+  }, [users, searchTerm]);
 
   const toggleBlock = useCallback((userId: string, currentStatus: boolean) => {
     const userRef = doc(firestore, 'users', userId);
@@ -56,7 +70,6 @@ export default function UserManagementPage() {
       });
   }, [firestore, toast]);
 
-  // DECOUPLING FIX: Ensure dropdown closes before dialog opens to prevent focus deadlock
   const handleViewActivity = useCallback((user: User) => {
     setTimeout(() => {
       setSelectedUserForActivity(user);
@@ -122,7 +135,7 @@ export default function UserManagementPage() {
                   </TableRow>
                 ))
               ) : (
-                users && users.map((user) => (
+                filteredUsers.map((user) => (
                   <TableRow key={user.id} className="hover:bg-accent/10 transition-colors border-b border-border/30">
                     <TableCell className="px-6 py-5">
                       <div className="flex items-center gap-4">
@@ -190,6 +203,13 @@ export default function UserManagementPage() {
                     </TableCell>
                   </TableRow>
                 ))
+              )}
+              {!isLoading && filteredUsers.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-medium">
+                    No users found matching your search.
+                  </TableCell>
+                </TableRow>
               )}
             </TableBody>
           </Table>
