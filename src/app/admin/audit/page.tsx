@@ -1,27 +1,40 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { useAuth } from '@/components/auth-context';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Download, Loader2, Info } from 'lucide-react';
+import { Download, Loader2, Info, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AuditLog } from '@/lib/types';
+
+const INITIAL_LIMIT = 50;
 
 export default function AuditTrailPage() {
   const { user } = useAuth();
   const firestore = useFirestore();
+  const [displayLimit, setDisplayLimit] = useState(INITIAL_LIMIT);
   
-  // STABILIZED & LIMITED QUERY: Prevents freezing by capping the results and ensuring stability.
   const logsQuery = useMemoFirebase(() => {
-    return query(collection(firestore, 'audit_logs'), orderBy('timestamp', 'desc'), limit(100));
-  }, [firestore]);
+    return query(
+      collection(firestore, 'audit_logs'), 
+      orderBy('timestamp', 'desc'), 
+      limit(displayLimit + 1)
+    );
+  }, [firestore, displayLimit]);
 
   const { data: logs, isLoading } = useCollection<AuditLog>(logsQuery);
+  
+  const hasMore = logs.length > displayLimit;
+  const displayLogs = logs.slice(0, displayLimit);
+
+  const loadMore = useCallback(() => {
+    setDisplayLimit(prev => prev + INITIAL_LIMIT);
+  }, []);
 
   if (user?.role !== 'ADMIN') {
     return (
@@ -47,7 +60,7 @@ export default function AuditTrailPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `audit-logs-recent.csv`);
+    link.setAttribute('download', `audit-logs-${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -69,7 +82,7 @@ export default function AuditTrailPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-extrabold tracking-tight text-primary">Audit Trail</h1>
-          <p className="text-muted-foreground mt-2 text-lg">Comprehensive log of administrative actions (showing last 100 entries).</p>
+          <p className="text-muted-foreground mt-2 text-lg">Comprehensive log of administrative actions.</p>
         </div>
         <Button 
           variant="outline" 
@@ -77,58 +90,75 @@ export default function AuditTrailPage() {
           disabled={!logs || logs.length === 0}
           className="h-12 px-6 rounded-xl border-border/60 hover:bg-accent font-bold shadow-sm"
         >
-          <Download className="mr-2 h-5 w-5" /> Export Recent
+          <Download className="mr-2 h-5 w-5" /> Export All Loaded
         </Button>
       </div>
 
       <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-xl text-sm text-muted-foreground">
         <Info className="h-4 w-4" />
-        <span>Performance note: Real-time logs are limited to the most recent 100 activities to ensure system stability.</span>
+        <span>System Stability: Showing {displayLogs.length} most recent entries. Data is cached locally for faster access.</span>
       </div>
 
       <Card className="border-none shadow-xl shadow-black/5 bg-white rounded-2xl overflow-hidden">
         <CardContent className="p-0">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center h-64 gap-3">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-muted-foreground font-medium">Loading audit logs...</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/30 border-b border-border/50 hover:bg-muted/30">
-                  <TableHead className="font-bold text-primary py-5 px-6">Timestamp</TableHead>
-                  <TableHead className="font-bold text-primary py-5">User</TableHead>
-                  <TableHead className="font-bold text-primary py-5">Operation</TableHead>
-                  <TableHead className="font-bold text-primary py-5">MOA Target</TableHead>
-                  <TableHead className="font-bold text-primary py-5">Details</TableHead>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/30 border-b border-border/50 hover:bg-muted/30">
+                <TableHead className="font-bold text-primary py-5 px-6">Timestamp</TableHead>
+                <TableHead className="font-bold text-primary py-5">User</TableHead>
+                <TableHead className="font-bold text-primary py-5">Operation</TableHead>
+                <TableHead className="font-bold text-primary py-5">MOA Target</TableHead>
+                <TableHead className="font-bold text-primary py-5">Details</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading && displayLogs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-64 text-center">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <p className="text-muted-foreground font-medium">Synchronizing logs...</p>
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {logs && logs.map((log) => (
-                  <TableRow key={log.id} className="hover:bg-accent/10 transition-colors border-b border-border/30">
-                    <TableCell className="px-6 py-5 whitespace-nowrap text-sm font-medium text-muted-foreground">
-                      {new Date(log.timestamp).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-bold text-foreground">{log.userName}</div>
-                    </TableCell>
-                    <TableCell>{getOpBadge(log.operation)}</TableCell>
-                    <TableCell className="font-bold text-primary">{log.moaName}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground max-w-xs truncate font-medium">
-                      {log.details}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {(!logs || logs.length === 0) && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-medium">
-                      No logs available yet.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+              ) : (
+                <>
+                  {displayLogs.map((log) => (
+                    <TableRow key={log.id} className="hover:bg-accent/10 transition-colors border-b border-border/30">
+                      <TableCell className="px-6 py-5 whitespace-nowrap text-sm font-medium text-muted-foreground">
+                        {new Date(log.timestamp).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-bold text-foreground">{log.userName}</div>
+                      </TableCell>
+                      <TableCell>{getOpBadge(log.operation)}</TableCell>
+                      <TableCell className="font-bold text-primary">{log.moaName}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground max-w-xs truncate font-medium">
+                        {log.details}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {displayLogs.length === 0 && !isLoading && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-medium">
+                        No logs available yet.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
+              )}
+            </TableBody>
+          </Table>
+          {hasMore && (
+            <div className="p-4 border-t border-border/40 flex justify-center bg-muted/5">
+              <Button 
+                variant="ghost" 
+                onClick={loadMore} 
+                className="text-primary font-bold hover:bg-primary/10 transition-all rounded-xl gap-2"
+              >
+                <ChevronDown className="h-4 w-4" /> Load Older Logs
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>

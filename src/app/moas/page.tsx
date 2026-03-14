@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/components/auth-context';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
@@ -8,7 +9,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore } from 'lucide-react';
+import { Plus, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore, ChevronDown } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useSearchParams } from 'next/navigation';
 import { softDeleteMOA, recoverMOA, createMOA, updateMOA } from '@/lib/moa-service';
@@ -28,6 +29,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 
+const INITIAL_BATCH = 25;
+
 export default function MOAListPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const firestore = useFirestore();
@@ -35,6 +38,8 @@ export default function MOAListPage() {
   const { toast } = useToast();
   
   const [activeTab, setActiveTab] = useState<'ALL' | 'ACTIVE' | 'PROCESSING' | 'DELETED'>('ALL');
+  const [displayLimit, setDisplayLimit] = useState(INITIAL_BATCH);
+  
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -55,17 +60,24 @@ export default function MOAListPage() {
 
   const moasQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(firestore, 'moas'), orderBy('updatedAt', 'desc'), limit(500));
-  }, [firestore, user?.id]);
+    return query(
+      collection(firestore, 'moas'), 
+      orderBy('updatedAt', 'desc'), 
+      limit(displayLimit + 1) // Fetch one extra to check if there's more
+    );
+  }, [firestore, user?.id, displayLimit]);
 
   const { data: moas, isLoading: isDataLoading, error: queryError } = useCollection<MOA>(moasQuery);
   
+  const hasMore = moas.length > displayLimit;
+  const displayMOAs = moas.slice(0, displayLimit);
+
   const isStudent = user?.role === 'STUDENT';
   const isFacultyOrAdmin = user?.role === 'ADMIN' || user?.role === 'FACULTY';
   const searchTerm = searchParams.get('search') || '';
 
   const filteredMOAs = useMemo(() => {
-    let list = moas || [];
+    let list = displayMOAs;
 
     if (isStudent) {
       list = list.filter(m => m.status.startsWith('APPROVED') && !m.isDeleted);
@@ -94,7 +106,11 @@ export default function MOAListPage() {
     }
 
     return list;
-  }, [user?.role, searchTerm, activeTab, isStudent, moas]);
+  }, [user?.role, searchTerm, activeTab, isStudent, displayMOAs]);
+
+  const loadMore = useCallback(() => {
+    setDisplayLimit(prev => prev + INITIAL_BATCH);
+  }, []);
 
   const handleAddMOA = (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,12 +146,12 @@ export default function MOAListPage() {
     });
   };
 
-  const openViewDialog = (moa: MOA) => {
+  const openViewDialog = useCallback((moa: MOA) => {
     setSelectedMOA(moa);
     setIsViewDialogOpen(true);
-  };
+  }, []);
 
-  const openEditDialog = (moa: MOA) => {
+  const openEditDialog = useCallback((moa: MOA) => {
     setSelectedMOA(moa);
     setFormData({
       companyName: moa.companyName,
@@ -150,7 +166,7 @@ export default function MOAListPage() {
       endorsedByCollege: moa.endorsedByCollege || '',
     });
     setIsEditDialogOpen(true);
-  };
+  }, []);
 
   const getStatusBadge = (status: string) => {
     if (status.startsWith('APPROVED')) return <Badge className="bg-green-100 text-green-800 border-none hover:bg-green-100 font-bold px-3 py-1 rounded-lg">Approved</Badge>;
@@ -236,7 +252,10 @@ export default function MOAListPage() {
                     key={tab}
                     variant={activeTab === tab ? 'secondary' : 'ghost'} 
                     size="sm" 
-                    onClick={() => setActiveTab(tab as any)}
+                    onClick={() => {
+                      setActiveTab(tab as any);
+                      setDisplayLimit(INITIAL_BATCH);
+                    }}
                     className={`text-xs h-9 px-4 rounded-lg transition-all ${activeTab === tab ? 'shadow-sm font-bold' : ''}`}
                   >
                     {tab.charAt(0) + tab.slice(1).toLowerCase()}
@@ -298,10 +317,7 @@ export default function MOAListPage() {
                           <DropdownMenuContent align="end" className="rounded-xl p-2 shadow-xl border-border/50 min-w-[160px]">
                             <DropdownMenuItem 
                               className="cursor-pointer rounded-lg py-2" 
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                openViewDialog(moa);
-                              }}
+                              onSelect={() => openViewDialog(moa)}
                             >
                               <Eye className="mr-2 h-4 w-4" /> View Details
                             </DropdownMenuItem>
@@ -310,10 +326,7 @@ export default function MOAListPage() {
                                 <DropdownMenuSeparator className="my-1 opacity-50" />
                                 <DropdownMenuItem 
                                   className="cursor-pointer rounded-lg py-2" 
-                                  onSelect={(e) => {
-                                    e.preventDefault();
-                                    openEditDialog(moa);
-                                  }}
+                                  onSelect={() => openEditDialog(moa)}
                                 >
                                   <Edit2 className="mr-2 h-4 w-4" /> Edit
                                 </DropdownMenuItem>
@@ -355,6 +368,17 @@ export default function MOAListPage() {
               </TableBody>
             </Table>
           </div>
+          {hasMore && (
+            <div className="p-4 border-t border-border/40 flex justify-center bg-muted/10">
+              <Button 
+                variant="ghost" 
+                onClick={loadMore} 
+                className="text-primary font-bold hover:bg-primary/10 transition-all rounded-xl gap-2"
+              >
+                <ChevronDown className="h-4 w-4" /> Load More Agreements
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

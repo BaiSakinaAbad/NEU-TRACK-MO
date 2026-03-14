@@ -1,26 +1,25 @@
+
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 
 /**
  * A specialized memoization hook for Firebase Firestore objects (Query, DocumentReference).
- * Firestore objects are often recreated on every render if not careful, 
- * which triggers infinite loops in listeners.
- * 
- * This hook uses a stringified key of the dependencies to ensure the 
- * memoized object only changes when the actual data it depends on changes.
+ * Prevents infinite re-render loops by ensuring the reference only changes when 
+ * actual dependencies change.
  */
 export function useMemoFirebase<T>(factory: () => T, deps: any[]): T {
-  // We use a ref to store the memoized value across renders
   const ref = useRef<T | null>(null);
-  const depsRef = useRef<string>('');
+  const prevDeps = useRef<any[]>([]);
 
-  const currentDepsKey = JSON.stringify(deps);
+  // We use a manual comparison to avoid JSON.stringify circular issues
+  const changed = deps.length !== prevDeps.current.length || deps.some((dep, i) => {
+    return dep !== prevDeps.current[i];
+  });
 
-  // BUG FIX: Changed depsRef.id to depsRef.current to properly track changes
-  if (currentDepsKey !== depsRef.current) {
+  if (changed || ref.current === null) {
     ref.current = factory();
-    depsRef.current = currentDepsKey;
+    prevDeps.current = deps;
   }
 
   return ref.current as T;
