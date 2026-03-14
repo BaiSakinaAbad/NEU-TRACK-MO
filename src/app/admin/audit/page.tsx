@@ -1,13 +1,14 @@
+
 "use client";
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useAuth } from '@/components/auth-context';
-import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { History, Download, Loader2 } from 'lucide-react';
+import { Download, Loader2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AuditLog } from '@/lib/types';
 
@@ -15,7 +16,11 @@ export default function AuditTrailPage() {
   const { user } = useAuth();
   const firestore = useFirestore();
   
-  const logsQuery = useMemo(() => query(collection(firestore, 'audit_logs'), orderBy('timestamp', 'desc')), [firestore]);
+  // STABILIZED & LIMITED QUERY: Prevents freezing by capping the results and ensuring stability.
+  const logsQuery = useMemoFirebase(() => {
+    return query(collection(firestore, 'audit_logs'), orderBy('timestamp', 'desc'), limit(100));
+  }, [firestore]);
+
   const { data: logs, isLoading } = useCollection<AuditLog>(logsQuery);
 
   if (user?.role !== 'ADMIN') {
@@ -42,7 +47,7 @@ export default function AuditTrailPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `audit-logs-${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `audit-logs-recent.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -64,7 +69,7 @@ export default function AuditTrailPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-extrabold tracking-tight text-primary">Audit Trail</h1>
-          <p className="text-muted-foreground mt-2 text-lg">Comprehensive log of all MOA modifications and administrative actions.</p>
+          <p className="text-muted-foreground mt-2 text-lg">Comprehensive log of administrative actions (showing last 100 entries).</p>
         </div>
         <Button 
           variant="outline" 
@@ -72,8 +77,13 @@ export default function AuditTrailPage() {
           disabled={!logs || logs.length === 0}
           className="h-12 px-6 rounded-xl border-border/60 hover:bg-accent font-bold shadow-sm"
         >
-          <Download className="mr-2 h-5 w-5" /> Export Logs
+          <Download className="mr-2 h-5 w-5" /> Export Recent
         </Button>
+      </div>
+
+      <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-xl text-sm text-muted-foreground">
+        <Info className="h-4 w-4" />
+        <span>Performance note: Real-time logs are limited to the most recent 100 activities to ensure system stability.</span>
       </div>
 
       <Card className="border-none shadow-xl shadow-black/5 bg-white rounded-2xl overflow-hidden">
@@ -98,9 +108,7 @@ export default function AuditTrailPage() {
                 {logs && logs.map((log) => (
                   <TableRow key={log.id} className="hover:bg-accent/10 transition-colors border-b border-border/30">
                     <TableCell className="px-6 py-5 whitespace-nowrap text-sm font-medium text-muted-foreground">
-                      {new Date(log.timestamp).toLocaleString(undefined, {
-                        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                      })}
+                      {new Date(log.timestamp).toLocaleString()}
                     </TableCell>
                     <TableCell>
                       <div className="font-bold text-foreground">{log.userName}</div>

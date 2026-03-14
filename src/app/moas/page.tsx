@@ -1,29 +1,20 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/components/auth-context';
-import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore, AlertTriangle, Search } from 'lucide-react';
+import { Plus, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore, Search } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useSearchParams } from 'next/navigation';
 import { softDeleteMOA, recoverMOA, createMOA, updateMOA } from '@/lib/moa-service';
 import { MOA, MOAStatus, MOA_STATUS_LABELS } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle 
-} from '@/components/ui/alert-dialog';
 import { 
   Dialog, 
   DialogContent, 
@@ -36,7 +27,6 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function MOAListPage() {
@@ -64,15 +54,14 @@ export default function MOAListPage() {
     endorsedByCollege: '',
   });
 
-  const moasQuery = useMemo(() => {
+  // STABILIZED QUERY: Prevents infinite loops by ensuring the query object is memoized correctly.
+  const moasQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(firestore, 'moas'), orderBy('updatedAt', 'desc'));
-  }, [firestore, user]);
+    return query(collection(firestore, 'moas'), orderBy('updatedAt', 'desc'), limit(500));
+  }, [firestore, user?.id]);
 
-  const { data: moas, isLoading: isDataLoading } = useCollection<MOA>(moasQuery);
+  const { data: moas, isLoading: isDataLoading, error: queryError } = useCollection<MOA>(moasQuery);
   
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-
   const isStudent = user?.role === 'STUDENT';
   const isFacultyOrAdmin = user?.role === 'ADMIN' || user?.role === 'FACULTY';
   const searchTerm = searchParams.get('search') || '';
@@ -107,27 +96,25 @@ export default function MOAListPage() {
     }
 
     return list;
-  }, [user, searchTerm, activeTab, isStudent, moas]);
+  }, [user?.role, searchTerm, activeTab, isStudent, moas]);
 
   const handleAddMOA = (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    
-    // Non-blocking write for optimistic UI
     createMOA(firestore, user, formData);
     setIsAddDialogOpen(false);
     resetForm();
+    toast({ title: "Success", description: "MOA registration initiated." });
   };
 
   const handleEditMOA = (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !selectedMOA) return;
-    
-    // Non-blocking write for optimistic UI
     updateMOA(firestore, user, selectedMOA.id, formData);
     setIsEditDialogOpen(false);
     setSelectedMOA(null);
     resetForm();
+    toast({ title: "Success", description: "Agreement updated." });
   };
 
   const resetForm = () => {
@@ -195,6 +182,20 @@ export default function MOAListPage() {
       ))}
     </>
   );
+
+  if (queryError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
+        <p className="text-destructive font-bold">Failed to load agreements.</p>
+        <p className="text-sm text-muted-foreground text-center max-w-md">
+          {queryError.message.includes('index') 
+            ? "Database indexing required. Please check the developer console for the setup link." 
+            : "Please check your internet connection or permissions."}
+        </p>
+        <Button onClick={() => window.location.reload()}>Retry Connection</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -312,18 +313,22 @@ export default function MOAListPage() {
                                   <Edit2 className="mr-2 h-4 w-4" /> Edit
                                 </DropdownMenuItem>
                                 {moa.isDeleted ? (
-                                  <>
-                                    <DropdownMenuItem 
-                                      className="cursor-pointer text-green-600 rounded-lg py-2"
-                                      onSelect={() => recoverMOA(firestore, user!, moa)}
-                                    >
-                                      <ArchiveRestore className="mr-2 h-4 w-4" /> Recover
-                                    </DropdownMenuItem>
-                                  </>
+                                  <DropdownMenuItem 
+                                    className="cursor-pointer text-green-600 rounded-lg py-2"
+                                    onSelect={() => {
+                                      recoverMOA(firestore, user!, moa);
+                                      toast({ title: "Recovered", description: "Record restored from bin." });
+                                    }}
+                                  >
+                                    <ArchiveRestore className="mr-2 h-4 w-4" /> Recover
+                                  </DropdownMenuItem>
                                 ) : (
                                   <DropdownMenuItem 
                                     className="cursor-pointer text-destructive rounded-lg py-2"
-                                    onSelect={() => softDeleteMOA(firestore, user!, moa)}
+                                    onSelect={() => {
+                                      softDeleteMOA(firestore, user!, moa);
+                                      toast({ title: "Removed", description: "Agreement moved to Recycle Bin." });
+                                    }}
                                   >
                                     <Trash2 className="mr-2 h-4 w-4" /> Move to Bin
                                   </DropdownMenuItem>
@@ -338,10 +343,7 @@ export default function MOAListPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={isStudent ? 6 : 7} className="h-32 text-center text-muted-foreground font-medium">
-                      <div className="flex flex-col items-center gap-2">
-                        <Search className="h-8 w-8 opacity-20" />
-                        No matching records found.
-                      </div>
+                      No matching records found.
                     </TableCell>
                   </TableRow>
                 )}
@@ -351,7 +353,6 @@ export default function MOAListPage() {
         </CardContent>
       </Card>
 
-      {/* View/Edit Dialogs (unchanged structure, but used with non-blocking updates) */}
       <Dialog open={isViewDialogOpen} onOpenChange={(open) => { setIsViewDialogOpen(open); if(!open) setSelectedMOA(null); }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
