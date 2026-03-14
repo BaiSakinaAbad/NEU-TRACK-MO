@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useRef } from 'react';
 
 /**
  * A specialized memoization hook for Firebase Firestore objects (Query, DocumentReference).
@@ -18,7 +17,8 @@ export function useMemoFirebase<T>(factory: () => T, deps: any[]): T {
 
   const currentDepsKey = JSON.stringify(deps);
 
-  if (currentDepsKey !== depsRef.id) {
+  // BUG FIX: Changed depsRef.id to depsRef.current to properly track changes
+  if (currentDepsKey !== depsRef.current) {
     ref.current = factory();
     depsRef.current = currentDepsKey;
   }

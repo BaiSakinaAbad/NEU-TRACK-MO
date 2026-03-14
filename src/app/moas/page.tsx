@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -9,7 +8,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore, Search } from 'lucide-react';
+import { Plus, MoreVertical, Eye, Edit2, Trash2, ArchiveRestore } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useSearchParams } from 'next/navigation';
 import { softDeleteMOA, recoverMOA, createMOA, updateMOA } from '@/lib/moa-service';
@@ -54,7 +53,6 @@ export default function MOAListPage() {
     endorsedByCollege: '',
   });
 
-  // STABILIZED QUERY: Prevents infinite loops by ensuring the query object is memoized correctly.
   const moasQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(firestore, 'moas'), orderBy('updatedAt', 'desc'), limit(500));
@@ -187,11 +185,6 @@ export default function MOAListPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
         <p className="text-destructive font-bold">Failed to load agreements.</p>
-        <p className="text-sm text-muted-foreground text-center max-w-md">
-          {queryError.message.includes('index') 
-            ? "Database indexing required. Please check the developer console for the setup link." 
-            : "Please check your internet connection or permissions."}
-        </p>
         <Button onClick={() => window.location.reload()}>Retry Connection</Button>
       </div>
     );
@@ -303,13 +296,25 @@ export default function MOAListPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="rounded-xl p-2 shadow-xl border-border/50 min-w-[160px]">
-                            <DropdownMenuItem className="cursor-pointer rounded-lg py-2" onSelect={() => openViewDialog(moa)}>
+                            <DropdownMenuItem 
+                              className="cursor-pointer rounded-lg py-2" 
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                openViewDialog(moa);
+                              }}
+                            >
                               <Eye className="mr-2 h-4 w-4" /> View Details
                             </DropdownMenuItem>
                             {isFacultyOrAdmin && (
                               <>
                                 <DropdownMenuSeparator className="my-1 opacity-50" />
-                                <DropdownMenuItem className="cursor-pointer rounded-lg py-2" onSelect={() => openEditDialog(moa)}>
+                                <DropdownMenuItem 
+                                  className="cursor-pointer rounded-lg py-2" 
+                                  onSelect={(e) => {
+                                    e.preventDefault();
+                                    openEditDialog(moa);
+                                  }}
+                                >
                                   <Edit2 className="mr-2 h-4 w-4" /> Edit
                                 </DropdownMenuItem>
                                 {moa.isDeleted ? (
