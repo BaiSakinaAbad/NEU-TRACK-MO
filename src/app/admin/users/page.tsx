@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -8,14 +9,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { UserPlus, MoreHorizontal, UserCog, Ban, CheckCircle2 } from 'lucide-react';
+import { UserPlus, MoreHorizontal, History, Ban, CheckCircle2, Clock, Hash } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, UserRole } from '@/lib/types';
+import { User } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -30,6 +30,8 @@ export default function UserManagementPage() {
   const { data: users, isLoading } = useCollection<User>(usersQuery);
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isActivityDialogOpen, setIsActivityDialogOpen] = useState(false);
+  const [selectedUserForActivity, setSelectedUserForActivity] = useState<User | null>(null);
 
   if (currentUser?.role !== 'ADMIN') {
     return (
@@ -42,7 +44,6 @@ export default function UserManagementPage() {
   const toggleBlock = (userId: string, currentStatus: boolean) => {
     const userRef = doc(firestore, 'users', userId);
     
-    // Non-blocking mutation for Optimistic UI
     updateDoc(userRef, { isBlocked: !currentStatus })
       .catch(async (err) => {
         if (err.code === 'permission-denied') {
@@ -77,17 +78,17 @@ export default function UserManagementPage() {
         <TableRow key={i}>
           <TableCell className="px-6 py-5">
             <div className="flex items-center gap-4">
-              <Skeleton className="h-11 w-11 rounded-full animate-skeleton" />
+              <Skeleton className="h-11 w-11 rounded-full" />
               <div className="space-y-2">
-                <Skeleton className="h-4 w-[120px] animate-skeleton" />
-                <Skeleton className="h-3 w-[150px] animate-skeleton" />
+                <Skeleton className="h-4 w-[120px]" />
+                <Skeleton className="h-3 w-[150px]" />
               </div>
             </div>
           </TableCell>
-          <TableCell><Skeleton className="h-6 w-[80px] rounded-lg animate-skeleton" /></TableCell>
-          <TableCell><Skeleton className="h-6 w-[80px] rounded-lg animate-skeleton" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-[60px] animate-skeleton" /></TableCell>
-          <TableCell className="text-right px-6"><Skeleton className="h-8 w-8 rounded-lg ml-auto animate-skeleton" /></TableCell>
+          <TableCell><Skeleton className="h-6 w-[80px] rounded-lg" /></TableCell>
+          <TableCell><Skeleton className="h-6 w-[80px] rounded-lg" /></TableCell>
+          <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
+          <TableCell className="text-right px-6"><Skeleton className="h-8 w-8 rounded-lg ml-auto" /></TableCell>
         </TableRow>
       ))}
     </>
@@ -98,7 +99,7 @@ export default function UserManagementPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-extrabold tracking-tight text-primary">User Management</h1>
-          <p className="text-muted-foreground mt-2 text-lg">Control user access and assign roles within the platform.</p>
+          <p className="text-muted-foreground mt-2 text-lg">Control user access and track activities.</p>
         </div>
         
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -177,8 +178,14 @@ export default function UserManagementPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="rounded-xl p-2 shadow-xl border-border/50 min-w-[160px]">
-                          <DropdownMenuItem className="cursor-pointer rounded-lg py-2">
-                            <UserCog className="mr-2 h-4 w-4" /> Manage Role
+                          <DropdownMenuItem 
+                            className="cursor-pointer rounded-lg py-2"
+                            onSelect={() => {
+                              setSelectedUserForActivity(user);
+                              setIsActivityDialogOpen(true);
+                            }}
+                          >
+                            <History className="mr-2 h-4 w-4" /> View Activity
                           </DropdownMenuItem>
                           {user.role !== 'ADMIN' && (
                             <>
@@ -205,6 +212,41 @@ export default function UserManagementPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* View Activity Dialog */}
+      <Dialog open={isActivityDialogOpen} onOpenChange={setIsActivityDialogOpen}>
+        <DialogContent className="sm:max-w-[425px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-primary flex items-center gap-2">
+              <History className="h-6 w-6" /> User Activity
+            </DialogTitle>
+            <DialogDescription>
+              Login and session data for {selectedUserForActivity?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-2">
+                <Clock className="h-3 w-3" /> Last Login Time
+              </Label>
+              <div className="p-3 bg-muted/30 rounded-xl text-sm font-semibold border border-border/40">
+                {selectedUserForActivity?.lastLogin ? new Date(selectedUserForActivity.lastLogin).toLocaleString() : 'No recent login recorded'}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-2">
+                <Hash className="h-3 w-3" /> Current Visit ID
+              </Label>
+              <div className="p-3 bg-muted/30 rounded-xl text-sm font-mono break-all border border-border/40">
+                {selectedUserForActivity?.visitId || 'No active session'}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setIsActivityDialogOpen(false)} className="w-full h-11 rounded-xl font-bold">Close Activity</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

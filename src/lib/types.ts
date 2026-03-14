@@ -1,3 +1,4 @@
+
 export type UserRole = 'STUDENT' | 'FACULTY' | 'ADMIN';
 
 export interface User {
@@ -7,6 +8,8 @@ export interface User {
   role: UserRole;
   isBlocked: boolean;
   college?: string;
+  lastLogin?: string;
+  visitId?: string;
 }
 
 export type MOAStatus = 
