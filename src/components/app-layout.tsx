@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './auth-context';
 import { 
   LayoutDashboard, 
@@ -38,26 +37,36 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   
   const [searchValue, setSearchValue] = useState(searchParams.get('search') || '');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Sync internal search state with URL search params when navigation happens
   useEffect(() => {
-    setSearchValue(searchParams.get('search') || '');
-  }, [searchParams]);
+    const currentSearch = searchParams.get('search') || '';
+    if (currentSearch !== searchValue) {
+      setSearchValue(currentSearch);
+    }
+  }, [searchParams, pathname]);
 
   if (!user) return <>{children}</>;
 
   const handleSearch = (term: string) => {
     setSearchValue(term);
     const params = new URLSearchParams(searchParams.toString());
+    
     if (term) {
       params.set('search', term);
     } else {
       params.delete('search');
     }
+
+    const newQuery = params.toString() ? `?${params.toString()}` : '';
     
+    // If we are on a searchable page, replace URL to update parameters
     if (pathname === '/moas' || pathname === '/admin/users') {
-      router.replace(`${pathname}?${params.toString()}`);
+      router.replace(`${pathname}${newQuery}`);
     } else {
-      router.push(`/moas?${params.toString()}`);
+      // If we are on dashboard or other, push to MOA list with search
+      router.push(`/moas${newQuery}`);
     }
   };
 
@@ -70,7 +79,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const filteredMenu = menuItems.filter(item => item.roles.includes(user.role));
 
-  const showSearch = pathname === '/moas' || pathname === '/admin/users';
+  const showSearch = pathname === '/moas' || pathname === '/admin/users' || pathname === '/dashboard';
   const searchPlaceholder = pathname === '/admin/users' 
     ? "Search users..." 
     : "Search MOAs...";
@@ -147,6 +156,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <div className="relative hidden lg:flex items-center h-10 w-64 px-3 bg-muted/30 rounded-xl border border-border/40 focus-within:border-primary/30 focus-within:bg-white transition-all">
                 <Search className="h-4 w-4 text-muted-foreground/60 mr-2" />
                 <input 
+                  ref={searchInputRef}
                   type="text" 
                   placeholder={searchPlaceholder}
                   className="bg-transparent border-none focus:ring-0 w-full outline-none text-xs font-medium placeholder:text-muted-foreground/50"

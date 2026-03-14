@@ -3,6 +3,8 @@ import './globals.css';
 import { AuthProvider } from '@/components/auth-context';
 import { AppLayout } from '@/components/app-layout';
 import { FirebaseClientProvider } from '@/firebase';
+import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Track Mo - University MOA Monitoring System',
@@ -24,7 +26,13 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <FirebaseClientProvider>
           <AuthProvider>
-            <AppLayout>{children}</AppLayout>
+            <Suspense fallback={
+              <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              </div>
+            }>
+              <AppLayout>{children}</AppLayout>
+            </Suspense>
           </AuthProvider>
         </FirebaseClientProvider>
       </body>
