@@ -8,37 +8,22 @@ service cloud.firestore {
     }
 
     // Helper to get the user's role from their document
-    // We use get() because role is stored in the document, not custom claims
     function getUserRole() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
 
     // User Profile Rules
     match /users/{userId} {
-      // Allow users to read their own profile OR Admins to read any profile
       allow read: if isAuthenticated() && (request.auth.uid == userId || getUserRole() == 'ADMIN');
-      
-      // Allow users to create their own initial profile on first login
       allow create: if isAuthenticated() && request.auth.uid == userId;
-      
-      // Allow users to update their own profile (e.g. name) OR Admins to manage everything
       allow update: if isAuthenticated() && (request.auth.uid == userId || getUserRole() == 'ADMIN');
-      
-      // Only Admins can delete users
       allow delete: if isAuthenticated() && getUserRole() == 'ADMIN';
     }
 
     // MOA Rules
     match /moas/{moaId} {
-      // Students can only see approved, non-deleted MOAs
-      // Faculty and Admins can see all non-deleted MOAs
-      // Admins can also see the Recycle Bin (isDeleted: true)
       allow read, list: if isAuthenticated();
-      
-      // Only Admins and Faculty can manage MOA data
       allow create, update: if isAuthenticated() && (getUserRole() == 'ADMIN' || getUserRole() == 'FACULTY');
-      
-      // Only Admins can perform hard deletions
       allow delete: if isAuthenticated() && getUserRole() == 'ADMIN';
     }
 
@@ -50,8 +35,11 @@ service cloud.firestore {
       // Any authenticated action (by Admin or Faculty) can create a log entry
       allow create: if isAuthenticated() && (getUserRole() == 'ADMIN' || getUserRole() == 'FACULTY');
       
-      // Logs are immutable
-      allow update, delete: if false;
+      // Allow Admins to clear/delete logs
+      allow delete: if isAuthenticated() && getUserRole() == 'ADMIN';
+      
+      // Logs remain non-editable
+      allow update: if false;
     }
   }
 }

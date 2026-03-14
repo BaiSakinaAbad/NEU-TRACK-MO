@@ -1,24 +1,35 @@
-
 "use client";
 
 import React, { useState, useCallback } from 'react';
 import { useAuth } from '@/components/auth-context';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useAuth as useFirebaseAuth } from '@/firebase';
+import { collection, query, orderBy, limit, getDocs, writeBatch, doc } from 'firebase/firestore';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Download, Loader2, Info, ChevronDown } from 'lucide-react';
+import { Download, Loader2, Info, ChevronDown, Trash2, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AuditLog } from '@/lib/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 const INITIAL_LIMIT = 50;
 
 export default function AuditTrailPage() {
   const { user } = useAuth();
+  const auth = useFirebaseAuth();
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [displayLimit, setDisplayLimit] = useState(INITIAL_LIMIT);
   
+  // States for Clear Log functionality
+  const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isClearing, setIsClearing] = useState(false);
+
   const logsQuery = useMemoFirebase(() => {
     return query(
       collection(firestore, 'audit_logs'), 
@@ -35,6 +46,42 @@ export default function AuditTrailPage() {
   const loadMore = useCallback(() => {
     setDisplayLimit(prev => prev + INITIAL_LIMIT);
   }, []);
+
+  const handleClearLogs = async () => {
+    if (!user || !user.email) return;
+    setIsClearing(true);
+
+    try {
+      // Re-authenticate user with password as a security check
+      await signInWithEmailAndPassword(auth, user.email, confirmPassword);
+      
+      // Fetch logs to delete (limited to batch of 500 for safety)
+      const logsSnap = await getDocs(query(collection(firestore, 'audit_logs'), limit(500)));
+      
+      const batch = writeBatch(firestore);
+      logsSnap.docs.forEach((logDoc) => {
+        batch.delete(logDoc.ref);
+      });
+
+      await batch.commit();
+
+      toast({
+        title: "Logs Cleared",
+        description: "The audit trail has been successfully truncated.",
+      });
+      setIsClearDialogOpen(false);
+      setConfirmPassword('');
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        variant: "destructive",
+        title: "Authentication Failed",
+        description: "Incorrect password. Clearing logs requires valid administrative credentials.",
+      });
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   if (user?.role !== 'ADMIN') {
     return (
@@ -79,24 +126,78 @@ export default function AuditTrailPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-extrabold tracking-tight text-primary">Audit Trail</h1>
           <p className="text-muted-foreground mt-2 text-lg">Comprehensive log of administrative actions.</p>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={handleExport}
-          disabled={!logs || logs.length === 0}
-          className="h-12 px-6 rounded-xl border-border/60 hover:bg-accent font-bold shadow-sm"
-        >
-          <Download className="mr-2 h-5 w-5" /> Export All Loaded
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            onClick={handleExport}
+            disabled={!logs || logs.length === 0}
+            className="h-12 px-6 rounded-xl border-border/60 hover:bg-accent font-bold shadow-sm"
+          >
+            <Download className="mr-2 h-5 w-5" /> Export
+          </Button>
+
+          <Dialog open={isClearDialogOpen} onOpenChange={setIsClearDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                variant="destructive"
+                className="h-12 px-6 rounded-xl font-bold shadow-lg shadow-destructive/20"
+                disabled={!logs || logs.length === 0}
+              >
+                <Trash2 className="mr-2 h-5 w-5" /> Clear All Logs
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] rounded-2xl">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold text-destructive flex items-center gap-2">
+                  <ShieldAlert className="h-6 w-6" /> Confirm Deletion
+                </DialogTitle>
+                <DialogDescription>
+                  This action is permanent and cannot be undone. All current audit logs will be deleted.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="pass" className="text-xs font-bold uppercase text-muted-foreground">Admin Password Required</Label>
+                  <Input 
+                    id="pass"
+                    type="password"
+                    placeholder="Enter your password to confirm"
+                    className="h-12 bg-muted/30 border-none"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setIsClearDialogOpen(false)}
+                  className="rounded-xl font-bold"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleClearLogs}
+                  disabled={!confirmPassword || isClearing}
+                  className="rounded-xl font-bold px-8"
+                >
+                  {isClearing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete Everything'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-xl text-sm text-muted-foreground">
         <Info className="h-4 w-4" />
-        <span>System Stability: Showing {displayLogs.length} most recent entries. Data is cached locally for faster access.</span>
+        <span>Data Integrity: Showing {displayLogs.length} most recent entries. System logs are immutable once recorded.</span>
       </div>
 
       <Card className="border-none shadow-xl shadow-black/5 bg-white rounded-2xl overflow-hidden">
