@@ -7,7 +7,7 @@ A Next.js application for tracking and managing university Memorandum of Agreeme
 Follow these steps to successfully deploy this project:
 
 ### 1. Firebase Setup
-Ensure your Firebase project is ready:
+Ensure your Firebase project is ready in the [Firebase Console](https://console.firebase.google.com/):
 - Enable **Authentication** (Email/Password and Google).
 - Enable **Cloud Firestore**.
 - Add the following to **Authentication > Settings > Authorized Domains**:
@@ -25,7 +25,7 @@ When importing your project to Vercel, add these **Environment Variables**:
 | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Project Settings > General |
 | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Project Settings > General |
 | `NEXT_PUBLIC_FIREBASE_APP_ID` | Project Settings > General |
-| `GEMINI_API_KEY` | Google AI Studio (for AI features) |
+| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/app/apikey) |
 
 ### 3. Build & Deploy
 - Vercel will automatically detect the Next.js project.
