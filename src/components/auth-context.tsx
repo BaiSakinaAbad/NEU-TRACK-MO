@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
@@ -8,7 +9,7 @@ import {
   GoogleAuthProvider, 
   signInWithPopup
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { useFirestore, useAuth as useFirebaseAuth } from '@/firebase';
 import { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
@@ -68,7 +69,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setUser(null);
               setError('Your account has been blocked. Please contact an administrator.');
             } else {
-              setUser({ ...userData, id: firebaseUser.uid });
+              // Update last login and potentially photoURL
+              const updates: any = { 
+                lastLogin: new Date().toISOString() 
+              };
+              if (firebaseUser.photoURL && userData.photoURL !== firebaseUser.photoURL) {
+                updates.photoURL = firebaseUser.photoURL;
+              }
+              
+              updateDoc(userDocRef, updates);
+              setUser({ ...userData, ...updates, id: firebaseUser.uid });
             }
           } else {
             // Auto-provision new user as STUDENT
@@ -79,6 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               role: 'STUDENT',
               isBlocked: false,
               lastLogin: new Date().toISOString(),
+              photoURL: firebaseUser.photoURL || undefined,
             };
             
             await setDoc(userDocRef, newUser);

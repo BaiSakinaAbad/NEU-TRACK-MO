@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useCallback, useMemo } from 'react';
@@ -10,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, History, Ban, CheckCircle2, Clock, Hash, Search, ArrowUpDown } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { User } from '@/lib/types';
@@ -142,6 +143,7 @@ export default function UserManagementPage() {
                       <TableCell className="px-6 py-5">
                         <div className="flex items-center gap-4">
                           <Avatar className="h-10 w-10 shadow-sm border border-border/50">
+                            {user.photoURL && <AvatarImage src={user.photoURL} alt={user.name} />}
                             <AvatarFallback className="bg-primary/5 text-primary font-bold text-sm">
                               {user.name.charAt(0)}
                             </AvatarFallback>

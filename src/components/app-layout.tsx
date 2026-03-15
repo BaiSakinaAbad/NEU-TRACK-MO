@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -16,7 +17,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   DropdownMenu, 
   DropdownMenuTrigger, 
@@ -139,17 +140,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2 shrink-0">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 p-1 rounded-full hover:bg-muted/60 transition-all outline-none group border border-transparent hover:border-border/40">
-                    <Avatar className="h-8 w-8 ring-2 ring-primary/5 shadow-sm">
-                      <AvatarFallback className="bg-primary/5 text-primary font-bold text-[10px] uppercase">
+                  <button className="flex items-center gap-3 p-1 rounded-full hover:bg-muted/60 transition-all outline-none group border border-transparent hover:border-border/40">
+                    <div className="hidden lg:flex flex-col items-end leading-tight text-right">
+                      <span className="text-[12px] font-bold text-foreground">{user.name}</span>
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-tight font-medium">{user.role}</span>
+                    </div>
+                    <Avatar className="h-10 w-10 ring-2 ring-primary/5 shadow-sm">
+                      {user.photoURL && <AvatarImage src={user.photoURL} alt={user.name} />}
+                      <AvatarFallback className="bg-primary/5 text-primary font-bold text-xs uppercase">
                         {user.name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="hidden lg:flex flex-col items-start leading-tight">
-                      <span className="text-[10px] font-bold text-foreground">{user.name}</span>
-                      <span className="text-[9px] text-muted-foreground uppercase tracking-tight">{user.role}</span>
-                    </div>
-                    <ChevronDown className="h-3 w-3 text-muted-foreground/60 group-hover:text-primary transition-colors" />
+                    <ChevronDown className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition-colors" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 rounded-xl p-2 shadow-xl border-border/50">

@@ -12,7 +12,8 @@
         "college": { "type": "string" },
         "isBlocked": { "type": "boolean" },
         "lastLogin": { "type": "string", "format": "date-time", "description": "Last recorded login timestamp" },
-        "visitId": { "type": "string", "description": "Unique session/visit identifier" }
+        "visitId": { "type": "string", "description": "Unique session/visit identifier" },
+        "photoURL": { "type": "string", "format": "uri" }
       },
       "required": ["name", "email", "role", "isBlocked"]
     },

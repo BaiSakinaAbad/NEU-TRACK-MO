@@ -10,6 +10,7 @@ export interface User {
   college?: string;
   lastLogin?: string;
   visitId?: string;
+  photoURL?: string;
 }
 
 export type MOAStatus = 
