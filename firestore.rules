@@ -35,7 +35,7 @@ service cloud.firestore {
       // Any authenticated action (by Admin or Faculty) can create a log entry
       allow create: if isAuthenticated() && (getUserRole() == 'ADMIN' || getUserRole() == 'FACULTY');
       
-      // Allow Admins to clear/delete logs
+      // Allow Admins to clear/delete logs (if needed)
       allow delete: if isAuthenticated() && getUserRole() == 'ADMIN';
       
       // Logs remain non-editable
