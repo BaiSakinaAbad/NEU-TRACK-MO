@@ -51,30 +51,5 @@ The application is built on a modern, cloud-native serverless architecture desig
 *   **Hosting & CI/CD:** [Vercel](https://vercel.com/) – Optimized deployment and automated build pipelines.
 *   **AI Integration:** [Genkit & Gemini](https://firebase.google.com/docs/genkit) – Future-ready architecture for intelligent partnership analysis.
 
-## 6. Database Schema (Firestore)
-
-### **`users` Collection**
-Each document represents a system user:
-*   `email`: (String) Institutional email.
-*   `name`: (String) Full name from Google profile.
-*   `role`: (Enum) `STUDENT` | `FACULTY` | `ADMIN`.
-*   `college`: (String) The selected department (e.g., CET, CICS).
-*   `isBlocked`: (Boolean) Access control flag.
-*   `lastLogin`: (Timestamp) ISO string of the most recent session.
-
-### **`moas` Collection**
-Each document represents a partnership agreement:
-*   `companyName`: (String) Primary identifier.
-*   `status`: (Enum) Tracks the agreement's legal standing (e.g., `APPROVED`, `PROCESSING`).
-*   `endorsedByCollege`: (String) Originating department.
-*   `isDeleted`: (Boolean) Flag for soft-deletion/Recycle Bin logic.
-*   `effectiveDate` / `expiryDate`: (Dates) Lifecycle boundaries.
-
-### **`audit_logs` Collection**
-Each document represents an administrative action:
-*   `userId`: (String) Reference to the actor.
-*   `operation`: (String) `CREATE`, `UPDATE`, `SOFT_DELETE`, `RECOVER`.
-*   `timestamp`: (Timestamp) Precise time of action.
-
 ---
 © 2026 New Era University | Professional Elective 2 Midterm Project
