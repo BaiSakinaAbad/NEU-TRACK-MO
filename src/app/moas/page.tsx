@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -157,8 +156,14 @@ export default function MOAListPage() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-primary">Memorandum of Agreements</h1>
-          <p className="text-muted-foreground mt-2 text-lg">Manage and track all university partnerships.</p>
+          <h1 className="text-4xl font-extrabold tracking-tight text-primary">
+            {isStudent ? `Hello, ${user?.name}` : "Memorandum of Agreements"}
+          </h1>
+          <p className="text-muted-foreground mt-2 text-lg">
+            {isStudent 
+              ? `Welcome to the official university partnership repository for ${user?.college || 'your college'}.`
+              : "Manage and track all university partnerships across various college departments."}
+          </p>
         </div>
         
         {isFacultyOrAdmin && (

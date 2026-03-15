@@ -81,67 +81,70 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-primary">Overview</h1>
-        <p className="text-muted-foreground">Welcome back, {user?.name}. Real-time monitoring enabled.</p>
+        <h1 className="text-4xl font-extrabold tracking-tight text-primary">Welcome back, {user?.name}</h1>
+        <p className="text-muted-foreground mt-2 text-lg">Here is a real-time overview of the university's partnership monitoring status.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-md transition-shadow border-none shadow-sm bg-white rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active MOAs</CardTitle>
-            <FileCheck className="h-4 w-4 text-primary" />
+            <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Active MOAs</CardTitle>
+            <FileCheck className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{stats.active}</div>
-            <p className="text-xs text-muted-foreground">Currently approved agreements</p>
+            <div className="text-4xl font-extrabold text-primary">{stats.active}</div>
+            <p className="text-xs text-muted-foreground mt-1">Currently approved agreements</p>
           </CardContent>
         </Card>
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-md transition-shadow border-none shadow-sm bg-white rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Processing</CardTitle>
-            <FileClock className="h-4 w-4 text-secondary" />
+            <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Processing</CardTitle>
+            <FileClock className="h-5 w-5 text-secondary" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{stats.processing}</div>
-            <p className="text-xs text-muted-foreground">Awaiting approval steps</p>
+            <div className="text-4xl font-extrabold text-secondary">{stats.processing}</div>
+            <p className="text-xs text-muted-foreground mt-1">Awaiting approval steps</p>
           </CardContent>
         </Card>
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-md transition-shadow border-none shadow-sm bg-white rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Expiring Soon</CardTitle>
-            <FileWarning className="h-4 w-4 text-orange-500" />
+            <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Expiring Soon</CardTitle>
+            <FileWarning className="h-5 w-5 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{stats.expiring}</div>
-            <p className="text-xs text-muted-foreground">Review required</p>
+            <div className="text-4xl font-extrabold text-orange-500">{stats.expiring}</div>
+            <p className="text-xs text-muted-foreground mt-1">Renewal review required</p>
           </CardContent>
         </Card>
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-md transition-shadow border-none shadow-sm bg-white rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Unique Partners</CardTitle>
-            <Briefcase className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Unique Partners</CardTitle>
+            <Briefcase className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{stats.totalPartners}</div>
-            <p className="text-xs text-muted-foreground">Across the university</p>
+            <div className="text-4xl font-extrabold text-foreground">{stats.totalPartners}</div>
+            <p className="text-xs text-muted-foreground mt-1">Across all college departments</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">MOA Status Distribution</CardTitle>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-4 border-none shadow-xl shadow-black/5 bg-white rounded-2xl overflow-hidden">
+          <CardHeader className="border-b border-border/50 bg-muted/10">
+            <CardTitle className="text-lg font-bold text-primary">MOA Status Distribution</CardTitle>
           </CardHeader>
-          <CardContent className="pl-2">
+          <CardContent className="pt-6">
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                  <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
-                  <Tooltip cursor={{ fill: 'transparent' }} />
-                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                  <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} fontWeight="bold" />
+                  <YAxis fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} fontWeight="bold" />
+                  <Tooltip 
+                    cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                  />
+                  <Bar dataKey="count" radius={[6, 6, 0, 0]} barSize={40}>
                     {chartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
@@ -152,27 +155,30 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-3 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">College Participation</CardTitle>
+        <Card className="col-span-3 border-none shadow-xl shadow-black/5 bg-white rounded-2xl overflow-hidden">
+          <CardHeader className="border-b border-border/50 bg-muted/10">
+            <CardTitle className="text-lg font-bold text-primary">Top Participating Colleges</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
+          <CardContent className="pt-6">
+            <div className="space-y-8">
               {collegeStats.length > 0 ? (
                 collegeStats.map((item) => (
                   <div key={item.name} className="flex items-center gap-4">
-                    <div className="w-12 text-sm font-bold text-muted-foreground">{item.name}</div>
-                    <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="w-16 text-xs font-bold text-muted-foreground uppercase tracking-wider">{item.name}</div>
+                    <div className="flex-1 h-3 bg-muted/40 rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-primary rounded-full transition-all" 
-                        style={{ width: `${Math.min(100, (item.value / (moas?.length || 1)) * 200)}%` }}
+                        className="h-full bg-primary rounded-full transition-all duration-1000 ease-out" 
+                        style={{ width: `${Math.min(100, (item.value / (moas?.length || 1)) * 100)}%` }}
                       />
                     </div>
-                    <div className="text-sm font-semibold">{item.value}</div>
+                    <div className="text-sm font-extrabold text-primary">{item.value}</div>
                   </div>
                 ))
               ) : (
-                <div className="text-center text-muted-foreground py-8">No data available</div>
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <p className="font-bold text-lg">No college data available</p>
+                  <p className="text-sm">Statistics will appear as MOAs are registered.</p>
+                </div>
               )}
             </div>
           </CardContent>
