@@ -161,7 +161,7 @@ export default function MOAListPage() {
           </h1>
           <p className="text-muted-foreground mt-2 text-lg">
             {isStudent 
-              ? `Welcome to the official university partnership repository for ${user?.college || 'your college'}.`
+              ? "Welcome to New Era University MOA tracking"
               : "Manage and track all university partnerships across various college departments."}
           </p>
         </div>
