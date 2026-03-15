@@ -4,7 +4,7 @@
 **Institution:** New Era University  
 **Live Application:** [neu-track-mo.vercel.app](https://neu-track-mo.vercel.app)
 
-_some features are still being developed and tested_
+_some features are still being developed and tested._
 
 ---
 
