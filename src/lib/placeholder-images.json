@@ -3,7 +3,7 @@
     {
       "id": "university-bg",
       "description": "University campus background for login",
-      "imageUrl": "https://picsum.photos/seed/neu/1920/1080",
+      "imageUrl": "/NEU_FACADE.jpg",
       "imageHint": "university campus"
     }
   ]
