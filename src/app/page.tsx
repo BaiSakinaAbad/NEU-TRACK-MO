@@ -12,7 +12,10 @@ export default function Home() {
     // Only redirect once we are sure about the auth state
     if (!isLoading) {
       if (user) {
-        if (user.role === 'STUDENT') {
+        // First-time college selection check for Student/Faculty
+        if ((user.role === 'STUDENT' || user.role === 'FACULTY') && !user.college) {
+          router.push('/onboarding');
+        } else if (user.role === 'STUDENT') {
           router.push('/moas');
         } else {
           router.push('/dashboard');

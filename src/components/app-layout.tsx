@@ -46,7 +46,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [searchParams]);
 
-  if (!user) return <>{children}</>;
+  // Bypass layout for login and onboarding pages
+  if (!user || pathname === '/login' || pathname === '/onboarding') return <>{children}</>;
 
   const handleSearch = (term: string) => {
     setSearchValue(term);
