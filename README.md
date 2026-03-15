@@ -1,57 +1,80 @@
 # Track Mo: University MOA Monitoring System
 **Midterm Project for Professional Elective 2**  
+**Author:** Bai Sakina Abad  
+**Institution:** New Era University  
 **Live Application:** [neu-track-mo.vercel.app](https://neu-track-mo.vercel.app)
 
 ---
 
 ## 1. Project Overview
-**Track Mo** is a web-based repository designed for New Era University (NEU) to manage and monitor Memorandum of Agreements (MOAs) between the institution and its various Host Training Establishments (HTEs). The system streamlines the partnership lifecycle—from initial processing and legal review to final approval and expiration tracking—ensuring that all university departments maintain valid and active collaborations.
+**Track Mo** is a centralized web-based repository engineered for New Era University (NEU) to meticulously manage and monitor Memorandum of Agreements (MOAs). The platform facilitates the entire partnership lifecycle—from initial legal review and processing to final approval and expiration tracking. It serves as a "single source of truth," ensuring that all university departments maintain valid, active, and legally compliant collaborations with Host Training Establishments (HTEs).
 
 ## 2. Problem Statement
-The traditional method of tracking university MOAs often relies on fragmented physical filing systems or disparate spreadsheets managed by individual colleges. This manual approach leads to several critical issues:
-*   **Lack of Visibility:** Difficulty in tracking the real-time status of pending agreements across different colleges.
-*   **Compliance Risks:** Unintentional use of expired agreements due to the absence of automated renewal alerts.
-*   **Data Inconsistency:** Redundant or conflicting records of the same partnership across different departments.
-*   **Audit Difficulty:** No centralized trail of who modified a record or when a partnership was officially endorsed.
-
-Digitalizing MOA tracking is necessary to ensure institutional compliance, improve administrative efficiency, and provide a single source of truth for all university-industry partnerships.
+The conventional methodology for tracking university MOAs is often characterized by fragmented physical filing systems or localized spreadsheets. This lack of digitization presents several critical institutional risks:
+*   **Operational Blind Spots:** Inability to track the real-time status of pending agreements across diverse colleges.
+*   **Compliance & Legal Risk:** Unintentional reliance on expired agreements due to the absence of automated monitoring and renewal alerts.
+*   **Data Siloing:** Redundant or conflicting records of the same partnership across different departments, leading to administrative confusion.
+*   **Audit Deficiencies:** Difficulty in maintaining a transparent, immutable trail of administrative modifications and endorsements.
 
 ## 3. System Architecture
-The application follows a modern cloud-native architecture designed for real-time synchronization and secure access:
+The application is built on a modern, cloud-native serverless architecture designed for real-time data synchronization and secure, role-based access:
 
-1.  **Authentication Layer (Firebase Auth):** Users authenticate using institutional `@neu.edu.ph` accounts. The system enforces domain-specific access control.
-2.  **Authorization & Onboarding:** Upon first login, users are routed to an onboarding flow to select their College Department, which is stored in their profile.
-3.  **Data Layer (Cloud Firestore):** All MOA records, user profiles, and audit logs are stored in a NoSQL document database. Security rules ensure that users only access data permitted by their roles.
-4.  **Admin Dashboard:** A centralized interface that aggregates Firestore data into real-time statistics (Active vs. Expired MOAs) and college-wise distribution charts.
-5.  **Audit Engine:** Every creation, update, or deletion triggers a background audit log entry, ensuring a transparent history of administrative actions.
+1.  **Authentication Layer (Firebase Auth):** Enforces security by restricting access to institutional `@neu.edu.ph` Google accounts. 
+2.  **Onboarding & Identity Management:** A specialized flow captures the user's College Department upon first login, anchoring their identity within the system.
+3.  **Data Persistence Layer (Cloud Firestore):** A NoSQL document database stores MOA records, user profiles, and audit logs. Security rules at the database level ensure strict data isolation based on user roles.
+4.  **Admin Intelligence Dashboard:** Aggregates live Firestore data into actionable insights, providing real-time statistics on partnership distribution and agreement statuses.
+5.  **Immutable Audit Engine:** Automated logging of every CRUD operation (Create, Read, Update, Delete) to ensure total accountability and data integrity.
 
 ## 4. Functional Requirements
 
-### **Admin Features**
-*   **User Management:** Ability to block/unblock users and monitor last login activities.
-*   **Audit Trail:** View and export a comprehensive log of all system operations.
-*   **System Overview:** Access to the full dashboard with partnership distribution analytics.
-*   **Full CRUD:** Create, read, update, and "soft delete" any MOA record.
+### **Administrative Control (Admin)**
+*   **User Governance:** Monitor last login activity and the ability to block/unblock accounts.
+*   **Comprehensive Audit Trail:** Visibility into the system's history for compliance monitoring.
+*   **Global CRUD Access:** Full lifecycle management of all MOA records across the institution.
+*   **System Analytics:** Access to the high-level dashboard with partnership distribution charts.
 
-### **Faculty Features**
-*   **Partnership Management:** Create and update MOA records specifically for their endorsed college.
-*   **Dashboard Access:** View real-time status of agreements belonging to their department.
-*   **Recycle Bin:** Recover accidentally deleted records via the soft-delete mechanism.
+### **Faculty & Staff Operations (Faculty)**
+*   **Departmental Management:** Create and update MOA records specific to their endorsed college.
+*   **Status Tracking:** Monitor the real-time processing stage of their department's partnerships.
+*   **Soft-Delete Recovery:** Ability to recover archived records from the system's "Recycle Bin."
 
-### **Student Features**
-*   **Repository Access:** View-only access to a list of active and approved partnerships.
-*   **Search & Filter:** Easily find HTEs by industry type or company name for internship opportunities.
+### **Student View (Student)**
+*   **Repository Access:** Read-only access to the list of active, approved, and valid HTE partnerships.
+*   **Discovery Tools:** Advanced filtering by industry type or company name to facilitate internship searching.
 
 ## 5. Technical Stack
-*   **Framework:** [Next.js 15+](https://nextjs.org/) (App Router) for high-performance server-side rendering and routing.
-*   **Styling:** [Tailwind CSS](https://tailwindcss.com/) and [ShadCN UI](https://ui.shadcn.com/) for a modern, responsive, and accessible user interface.
-*   **Backend-as-a-Service:** [Firebase](https://firebase.google.com/)
-    *   **Firestore:** Real-time NoSQL database for MOA and User data.
-    *   **Authentication:** Secure Google and Email/Password sign-in with institutional domain filtering.
-*   **Deployment:** [Vercel](https://vercel.com/) for continuous integration and global hosting.
-*   **AI Integration:** [Genkit & Gemini](https://firebase.google.com/docs/genkit) for future-proofing with intelligent partnership insights.
+*   **Frontend Framework:** [Next.js 15+](https://nextjs.org/) (App Router) – Utilizing React Server Components (RSC) for performance and SEO.
+*   **Interface Design:** [Tailwind CSS](https://tailwindcss.com/) & [ShadCN UI](https://ui.shadcn.com/) – Providing a responsive, professional, and accessible UI.
+*   **Backend as a Service (BaaS):** [Firebase](https://firebase.google.com/)
+    *   **Firestore:** Real-time NoSQL database for flexible data modeling.
+    *   **Authentication:** Secure Google OAuth with domain-specific filtering.
+*   **Hosting & CI/CD:** [Vercel](https://vercel.com/) – Optimized deployment and automated build pipelines.
+*   **AI Integration:** [Genkit & Gemini](https://firebase.google.com/docs/genkit) – Future-ready architecture for intelligent partnership analysis.
 
-### Creator
-Bai Sakina Abad New Era University Course: Professional Elective 2
+## 6. Database Schema (Firestore)
 
-© 2026 New Era University
+### **`users` Collection**
+Each document represents a system user:
+*   `email`: (String) Institutional email.
+*   `name`: (String) Full name from Google profile.
+*   `role`: (Enum) `STUDENT` | `FACULTY` | `ADMIN`.
+*   `college`: (String) The selected department (e.g., CET, CICS).
+*   `isBlocked`: (Boolean) Access control flag.
+*   `lastLogin`: (Timestamp) ISO string of the most recent session.
+
+### **`moas` Collection**
+Each document represents a partnership agreement:
+*   `companyName`: (String) Primary identifier.
+*   `status`: (Enum) Tracks the agreement's legal standing (e.g., `APPROVED`, `PROCESSING`).
+*   `endorsedByCollege`: (String) Originating department.
+*   `isDeleted`: (Boolean) Flag for soft-deletion/Recycle Bin logic.
+*   `effectiveDate` / `expiryDate`: (Dates) Lifecycle boundaries.
+
+### **`audit_logs` Collection**
+Each document represents an administrative action:
+*   `userId`: (String) Reference to the actor.
+*   `operation`: (String) `CREATE`, `UPDATE`, `SOFT_DELETE`, `RECOVER`.
+*   `timestamp`: (Timestamp) Precise time of action.
+
+---
+© 2026 New Era University | Professional Elective 2 Midterm Project
