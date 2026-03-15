@@ -141,7 +141,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (error.code === 'auth/operation-not-allowed') {
         message = 'Google Sign-in is not enabled in the Firebase Console.';
       } else if (error.code === 'auth/unauthorized-domain') {
-        message = 'This domain is not authorized for login. Add it to "Authorized Domains" in the Firebase Console.';
+        const domain = typeof window !== 'undefined' ? window.location.hostname : 'your domain';
+        message = `This domain (${domain}) is not authorized for login. Please add it to "Authorized Domains" in your Firebase Console settings.`;
       }
       
       setError(message);
