@@ -50,7 +50,7 @@ export default function LoginPage() {
     try {
       await loginWithGoogle();
     } catch (err) {
-      // Errors are handled in AuthProvider/authError state
+      // Errors are surfaced through the AuthContext error state
     } finally {
       setIsLoadingLocal(false);
     }
@@ -72,7 +72,9 @@ export default function LoginPage() {
             {activeError && (
               <Alert variant="destructive" className="bg-destructive/5 text-destructive border-destructive/20 py-2">
                 <AlertCircle className="h-4 w-4 shrink-0" />
-                <AlertDescription className="text-xs whitespace-pre-wrap leading-relaxed">{activeError}</AlertDescription>
+                <AlertDescription className="text-xs whitespace-pre-wrap leading-relaxed">
+                  {activeError}
+                </AlertDescription>
               </Alert>
             )}
             

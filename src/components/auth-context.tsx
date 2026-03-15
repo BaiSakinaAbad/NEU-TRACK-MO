@@ -83,7 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(newUser);
           }
         } catch (err: any) {
-          console.error("Auth initialization error:", err);
           if (err.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
               path: `/users/${firebaseUser.uid}`,
@@ -126,19 +125,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
       await signInWithPopup(auth, provider);
     } catch (error: any) {
-      console.error("Google login error:", error);
       let message = error.message;
       
       if (error.code === 'auth/popup-blocked') {
-        message = 'The login popup was blocked by your browser. Please allow popups for this site and try again.';
+        message = 'The login popup was blocked by your browser. Please allow popups for this site in your browser settings and try again.';
       } else if (error.code === 'auth/popup-closed-by-user') {
         message = 'Login cancelled. Please try again.';
       } else if (error.code === 'auth/operation-not-allowed') {
-        message = 'Google Sign-in is not enabled in the Firebase Console (Authentication > Sign-in method).';
+        message = 'Google Sign-in is not enabled in the Firebase Console.';
       } else if (error.code === 'auth/unauthorized-domain') {
         message = 'This domain is not authorized for OAuth. Add it to "Authorized Domains" in the Firebase Console.';
-      } else if (error.code === 'auth/internal-error') {
-        message = 'A configuration error occurred. Please check your API key restrictions and Redirect URIs.';
       }
       
       setError(message);
