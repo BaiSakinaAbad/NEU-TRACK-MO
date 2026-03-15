@@ -14,6 +14,7 @@ import { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { isFirebaseConfigValid } from '@/firebase/config';
 
 interface LoginResponse {
   success: boolean;
@@ -116,11 +117,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loginWithGoogle = async () => {
+    if (!isFirebaseConfigValid) {
+      setError("Firebase is not fully configured. Please ensure NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN is set in your .env.local file.");
+      return;
+    }
+
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ 
       hd: 'neu.edu.ph',
       prompt: 'select_account' 
     });
+
     try {
       setError(null);
       await signInWithPopup(auth, provider);
@@ -128,13 +135,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       let message = error.message;
       
       if (error.code === 'auth/popup-blocked') {
-        message = 'The login popup was blocked by your browser. Please allow popups for this site in your browser settings and try again.';
+        message = 'The login popup was blocked by your browser. Please allow popups for this site and try again.';
       } else if (error.code === 'auth/popup-closed-by-user') {
         message = 'Login cancelled. Please try again.';
       } else if (error.code === 'auth/operation-not-allowed') {
         message = 'Google Sign-in is not enabled in the Firebase Console.';
       } else if (error.code === 'auth/unauthorized-domain') {
-        message = 'This domain is not authorized for OAuth. Add it to "Authorized Domains" in the Firebase Console.';
+        message = 'This domain is not authorized for login. Add it to "Authorized Domains" in the Firebase Console.';
       }
       
       setError(message);

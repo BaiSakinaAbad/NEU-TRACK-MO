@@ -9,6 +9,11 @@ import {
 } from 'firebase/firestore';
 import { firebaseConfig } from './config';
 
+// Singletons to prevent re-initialization issues in HMR
+let app: FirebaseApp;
+let auth: Auth;
+let firestore: Firestore;
+
 /**
  * Initializes and returns the Firebase app and its services.
  * This is designed to be used on the client side.
@@ -18,23 +23,25 @@ export function initializeFirebase(): {
   auth: Auth;
   firestore: Firestore;
 } {
-  // Ensure we don't initialize multiple times
-  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-  const auth = getAuth(app);
-  const firestore = getFirestore(app);
+  if (getApps().length === 0) {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    firestore = getFirestore(app);
 
-  // Enable persistence for offline support and faster local reads
-  // Only execute on the client and only if the config is valid
-  if (typeof window !== 'undefined' && firebaseConfig.projectId) {
-    enableMultiTabIndexedDbPersistence(firestore).catch((err) => {
-      if (err.code === 'failed-precondition') {
-        // Multiple tabs open, persistence can only be enabled in one tab at a time.
-        console.warn('Firestore persistence failed-precondition: Multiple tabs open.');
-      } else if (err.code === 'unimplemented') {
-        // The current browser does not support all of the features required to enable persistence
-        console.warn('Firestore persistence unimplemented: Browser not supported.');
-      }
-    });
+    // Enable persistence for offline support
+    if (typeof window !== 'undefined' && firebaseConfig.projectId) {
+      enableMultiTabIndexedDbPersistence(firestore).catch((err) => {
+        if (err.code === 'failed-precondition') {
+          console.warn('Firestore persistence failed: Multiple tabs open.');
+        } else if (err.code === 'unimplemented') {
+          console.warn('Firestore persistence unimplemented: Browser not supported.');
+        }
+      });
+    }
+  } else {
+    app = getApp();
+    auth = getAuth(app);
+    firestore = getFirestore(app);
   }
 
   return { app, auth, firestore };

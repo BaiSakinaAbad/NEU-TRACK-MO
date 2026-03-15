@@ -7,10 +7,16 @@ export const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || ''
 };
 
-// Simple validation to help catch common setup errors
-if (typeof window !== 'undefined' && (!firebaseConfig.apiKey || !firebaseConfig.authDomain)) {
+// Validation to help catch missing environment variables
+export const isFirebaseConfigValid = !!(
+  firebaseConfig.apiKey && 
+  firebaseConfig.authDomain && 
+  firebaseConfig.projectId
+);
+
+if (typeof window !== 'undefined' && !isFirebaseConfigValid) {
   console.warn(
-    'Firebase configuration is incomplete. Please ensure you have added the correct values to your .env.local file ' +
-    'and that they match your project settings in the Firebase Console.'
+    'Track Mo: Firebase configuration is incomplete. Authentication features will be disabled until ' +
+    'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN and other variables are set in .env.local.'
   );
 }
