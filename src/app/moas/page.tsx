@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -28,6 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { COLLEGES } from '@/lib/constants';
 
 const INITIAL_BATCH = 25;
 
@@ -378,6 +380,12 @@ export default function MOAListPage() {
 }
 
 function DetailItem({ label, value, icon: Icon, fullWidth = false }: { label: string, value: string | undefined, icon?: any, fullWidth?: boolean }) {
+  const displayValue = useMemo(() => {
+    if (!value) return '—';
+    const college = COLLEGES.find(c => c.value === value);
+    return college ? college.label : value;
+  }, [value]);
+
   return (
     <div className={cn("space-y-1", fullWidth ? 'col-span-1 md:col-span-2' : '')}>
       <Label className="text-[9px] font-bold uppercase text-muted-foreground/80 flex items-center gap-1.5">
@@ -385,7 +393,7 @@ function DetailItem({ label, value, icon: Icon, fullWidth = false }: { label: st
         {label}
       </Label>
       <div className="text-xs font-semibold px-3 py-2 bg-muted/20 rounded-lg border border-border/40 text-foreground min-h-[36px] flex items-center">
-        {value || '—'}
+        {displayValue}
       </div>
     </div>
   );
@@ -462,13 +470,19 @@ function MOAFormFields({ formData, setFormData }: { formData: any, setFormData: 
       </div>
       <div className="space-y-2">
         <Label className="text-xs font-bold uppercase text-muted-foreground">Endorsed by College</Label>
-        <Input 
-          placeholder="e.g. CCS, CBA, CEA"
-          className="h-12 bg-muted/30 border-none rounded-xl focus-visible:ring-primary/20"
-          value={formData.endorsedByCollege}
-          onChange={(e) => setFormData({...formData, endorsedByCollege: e.target.value})}
-          required
-        />
+        <Select 
+          value={formData.endorsedByCollege} 
+          onValueChange={(v) => setFormData({...formData, endorsedByCollege: v})}
+        >
+          <SelectTrigger className="h-12 bg-muted/30 border-none rounded-xl">
+            <SelectValue placeholder="Select College" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            {COLLEGES.map(college => (
+              <SelectItem key={college.value} value={college.value}>{college.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="space-y-2">
         <Label className="text-xs font-bold uppercase text-muted-foreground">Effective Date of MOA</Label>
