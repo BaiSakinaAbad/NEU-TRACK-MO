@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import Image from 'next/image';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -19,7 +21,8 @@ export default function LoginPage() {
   const { login, loginWithGoogle, user, error: authError } = useAuth();
   const router = useRouter();
 
-  // If user becomes authenticated, redirect automatically
+  const bgImage = PlaceHolderImages.find(img => img.id === 'university-bg');
+
   useEffect(() => {
     if (user) {
       router.push('/');
@@ -50,7 +53,7 @@ export default function LoginPage() {
     try {
       await loginWithGoogle();
     } catch (err) {
-      // Errors are surfaced through the AuthContext error state
+      // Errors handled via context
     } finally {
       setIsLoadingLocal(false);
     }
@@ -59,8 +62,24 @@ export default function LoginPage() {
   const activeError = localError || authError;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50/50 p-4 font-body">
-      <Card className="w-full max-w-md shadow-2xl border-none p-6 bg-white">
+    <div className="relative min-h-screen flex items-center justify-center p-4 font-body overflow-hidden">
+      {/* Background Image Layer */}
+      {bgImage && (
+        <div className="absolute inset-0 z-0">
+          <Image
+            src={bgImage.imageUrl}
+            alt={bgImage.description}
+            fill
+            className="object-cover opacity-40"
+            priority
+            data-ai-hint={bgImage.imageHint}
+          />
+          {/* Light Blue Overlay */}
+          <div className="absolute inset-0 bg-blue-100/40 mix-blend-multiply" />
+        </div>
+      )}
+
+      <Card className="relative z-10 w-full max-w-md shadow-2xl border-none p-6 bg-white/95 backdrop-blur-sm rounded-3xl">
         <CardHeader className="space-y-1 text-center pb-6">
           <CardTitle className="text-3xl font-bold tracking-tight text-primary">Track Mo</CardTitle>
           <CardDescription className="text-base text-muted-foreground">
@@ -79,12 +98,12 @@ export default function LoginPage() {
             )}
             
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs font-bold text-foreground">Email</Label>
+              <Label htmlFor="email" className="text-xs font-bold text-foreground ml-1 uppercase tracking-wider">Email</Label>
               <Input 
                 id="email" 
                 type="email" 
                 placeholder="name@neu.edu.ph" 
-                className="bg-[#f8f9fa] border-none h-12 text-sm px-4 focus-visible:ring-1 focus-visible:ring-primary/20"
+                className="bg-muted/40 border-none h-12 text-sm px-4 rounded-xl focus-visible:ring-1 focus-visible:ring-primary/20"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -93,13 +112,13 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password" title="Password" className="text-xs font-bold text-foreground">Password</Label>
+              <Label htmlFor="password" title="Password" className="text-xs font-bold text-foreground ml-1 uppercase tracking-wider">Password</Label>
               <div className="relative">
                 <Input 
                   id="password" 
                   type={showPassword ? "text" : "password"}
                   placeholder="........"
-                  className="bg-[#f8f9fa] border-none h-12 pr-12 text-sm px-4 focus-visible:ring-1 focus-visible:ring-primary/20"
+                  className="bg-muted/40 border-none h-12 pr-12 text-sm px-4 rounded-xl focus-visible:ring-1 focus-visible:ring-primary/20"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -116,55 +135,57 @@ export default function LoginPage() {
             </div>
 
             <Button 
-              className="w-full h-12 text-sm font-semibold bg-primary hover:bg-primary/90 rounded-lg shadow-sm mt-2" 
+              className="w-full h-12 text-sm font-bold bg-primary hover:bg-primary/90 rounded-xl shadow-lg shadow-primary/20 mt-2" 
               type="submit" 
               disabled={isLoadingLocal}
             >
               {isLoadingLocal && !authError ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              {isLoadingLocal && !authError ? 'Processing...' : 'Log In with Email'}
+              {isLoadingLocal && !authError ? 'Verifying...' : 'Log In with Email'}
             </Button>
 
-            <div className="relative flex items-center py-1">
+            <div className="relative flex items-center py-2">
               <div className="flex-grow border-t border-muted/60"></div>
-              <span className="flex-shrink mx-4 text-[10px] text-muted-foreground uppercase font-bold tracking-wider">OR CONTINUE WITH</span>
+              <span className="flex-shrink mx-4 text-[10px] text-muted-foreground uppercase font-bold tracking-widest">OR</span>
               <div className="flex-grow border-t border-muted/60"></div>
             </div>
 
             <Button 
               type="button" 
               variant="outline" 
-              className="w-full h-12 bg-[#f8f9fa] border-none hover:bg-[#e8eaed] text-[#3c4043] font-semibold rounded-lg transition-colors flex items-center justify-center gap-3"
+              className="w-full h-12 bg-white border-border/60 hover:bg-muted/30 text-foreground font-bold rounded-xl transition-all flex items-center justify-center gap-3"
               onClick={handleGoogleLogin}
               disabled={isLoadingLocal}
             >
               {isLoadingLocal && !authError ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <svg className="h-4 w-4" viewBox="0 0 24 24">
-                  <path
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    fill="#4285F4"
-                  />
-                  <path
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    fill="#34A853"
-                  />
-                  <path
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    fill="#FBBC05"
-                  />
-                  <path
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    fill="#EA4335"
-                  />
-                </svg>
+                <>
+                  <svg className="h-5 w-5" viewBox="0 0 24 24">
+                    <path
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      fill="#4285F4"
+                    />
+                    <path
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      fill="#34A853"
+                    />
+                    <path
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                      fill="#FBBC05"
+                    />
+                    <path
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      fill="#EA4335"
+                    />
+                  </svg>
+                  Log in with Google
+                </>
               )}
-              {isLoadingLocal && !authError ? 'Processing...' : 'Log in with Google'}
             </Button>
           </CardContent>
-          <CardFooter className="pt-2 flex justify-center">
-            <p className="text-[13px] text-muted-foreground">
-              Only accounts with <span className="text-[#5f6368] font-medium underline underline-offset-4 decoration-muted/50">@neu.edu.ph</span> are permitted.
+          <CardFooter className="pt-2 flex flex-col gap-2 justify-center">
+            <p className="text-[12px] text-muted-foreground font-medium">
+              Only institutional <span className="text-primary font-bold">@neu.edu.ph</span> accounts allowed.
             </p>
           </CardFooter>
         </form>
