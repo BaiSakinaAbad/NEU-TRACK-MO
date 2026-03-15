@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -93,18 +92,6 @@ export default function OnboardingPage() {
         
         <form onSubmit={handleSubmit}>
           <CardContent className="p-8 space-y-8">
-            <div className="flex items-start gap-4 p-4 bg-muted/30 rounded-2xl border border-border/40">
-              <div className="bg-primary/10 p-2.5 rounded-xl">
-                {user.role === 'STUDENT' ? <GraduationCap className="w-6 h-6 text-primary" /> : <Landmark className="w-6 h-6 text-primary" />}
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-bold text-foreground">Verification Requirement</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  As a {user.role.toLowerCase()}, you are required to select your primary college department to access MOA records and university features.
-                </p>
-              </div>
-            </div>
-
             <div className="space-y-3">
               <Label htmlFor="college" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
                 Select Your College
@@ -116,7 +103,7 @@ export default function OnboardingPage() {
                 <SelectContent className="rounded-2xl p-2 border-border/50 shadow-2xl max-h-[400px]">
                   {COLLEGES.map((college) => (
                     <SelectItem key={college.value} value={college.value} className="rounded-xl py-3 font-medium text-sm">
-                      {college.label} ({college.value})
+                      {college.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

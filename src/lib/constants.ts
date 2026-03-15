@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Centralized constants for the application.
  */
@@ -13,7 +12,7 @@ export const COLLEGES = [
   { value: 'CBA', label: 'College of Business Administration' },
   { value: 'COC', label: 'College of Communication' },
   { value: 'CICS', label: 'College of Informatics and Computing Studies' },
-  { value: 'CCrim', label: 'College of Criminology' },
+  { value: 'C0C', label: 'College of Criminology' },
   { value: 'CED', label: 'College of Education' },
   { value: 'CET', label: 'College of Engineering and Technology' },
   { value: 'CMT', label: 'College of Medical Technology' },
@@ -21,6 +20,6 @@ export const COLLEGES = [
   { value: 'COMus', label: 'College of Music' },
   { value: 'CON', label: 'College of Nursing' },
   { value: 'CRT', label: 'College of Respiratory Therapy' },
-  { value: 'SIR', label: 'School of International Relations' },
+  { value: 'SOIR', label: 'School of International Relations' },
   { value: 'OTHER', label: 'Other' },
 ];
