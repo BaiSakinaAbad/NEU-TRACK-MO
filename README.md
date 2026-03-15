@@ -1,11 +1,11 @@
 # Track Mo: University MOA Monitoring System
-**Midterm Project for Software Development 2**  
+**Midterm Project for Professional Elective 2**  
 **Live Application:** [neu-track-mo.vercel.app](https://neu-track-mo.vercel.app)
 
 ---
 
 ## 1. Project Overview
-**Track Mo** is a centralized web-based repository designed for New Era University (NEU) to manage and monitor Memorandum of Agreements (MOAs) between the institution and its various Host Training Establishments (HTEs). The system streamlines the partnership lifecycle—from initial processing and legal review to final approval and expiration tracking—ensuring that all university departments maintain valid and active collaborations.
+**Track Mo** is a web-based repository designed for New Era University (NEU) to manage and monitor Memorandum of Agreements (MOAs) between the institution and its various Host Training Establishments (HTEs). The system streamlines the partnership lifecycle—from initial processing and legal review to final approval and expiration tracking—ensuring that all university departments maintain valid and active collaborations.
 
 ## 2. Problem Statement
 The traditional method of tracking university MOAs often relies on fragmented physical filing systems or disparate spreadsheets managed by individual colleges. This manual approach leads to several critical issues:
@@ -51,32 +51,7 @@ The application follows a modern cloud-native architecture designed for real-tim
 *   **Deployment:** [Vercel](https://vercel.com/) for continuous integration and global hosting.
 *   **AI Integration:** [Genkit & Gemini](https://firebase.google.com/docs/genkit) for future-proofing with intelligent partnership insights.
 
-## 6. Database Schema
-The system utilizes three primary collections in Cloud Firestore:
+### Creator
+Bai Sakina Abad New Era University Course: Professional Elective 2
 
-### **`users` Collection**
-Stores profile information and access levels.
-*   `id` (String): Unique Firebase UID.
-*   `name` (String): Full name of the user.
-*   `email` (String): Institutional email address.
-*   `role` (Enum): `ADMIN`, `FACULTY`, or `STUDENT`.
-*   `college` (String): The associated college (e.g., CICS, CET, CBA).
-*   `isBlocked` (Boolean): Flag for administrative access control.
-
-### **`moas` Collection**
-The core repository of partnership agreements.
-*   `companyName` (String): Official name of the HTE.
-*   `status` (String): Current phase (e.g., `APPROVED_SIGNED`, `PROCESSING_LEGAL`).
-*   `effectiveDate` / `expiryDate` (ISO Date): Agreement duration.
-*   `endorsedByCollege` (String): The college that initiated the partnership.
-*   `isDeleted` (Boolean): Used for soft-deletion and recovery.
-
-### **`audit_logs` Collection**
-Immutable record of system changes.
-*   `operation` (String): `CREATE`, `UPDATE`, `SOFT_DELETE`, `RECOVER`.
-*   `userId` / `userName` (String): Identifies the actor.
-*   `moaName` (String): The target record of the operation.
-*   `timestamp` (ISO DateTime): Precise time of the action.
-
----
-© 2024 New Era University - Midterm Project in Software Development 2
+© 2026 New Era University
